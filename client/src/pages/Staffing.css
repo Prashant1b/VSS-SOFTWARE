@@ -1,0 +1,196 @@
+.staffing-hero {
+  background: linear-gradient(160deg, #ECFDF5 0%, #EEF2FF 60%, #F5F3FF 100%);
+  padding: 100px 0 88px;
+  text-align: center;
+}
+
+.staffing-hero-title {
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1.12;
+  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+
+.staffing-hero-sub {
+  font-size: 17px;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto 32px;
+  line-height: 1.7;
+}
+
+.staffing-spec-card { text-align: left; }
+
+.staffing-spec-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-sm);
+  background: var(--secondary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--secondary);
+  margin-bottom: 18px;
+}
+
+.staffing-spec-card h3 { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+.staffing-spec-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+/* Process */
+.process-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+}
+
+.process-step {
+  text-align: center;
+  padding: 28px 12px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+}
+
+.process-step:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+}
+
+.process-num {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--primary);
+  opacity: 0.12;
+  margin-bottom: 10px;
+}
+
+.process-step h3 { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+.process-step p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+/* Differentiators */
+.diff-card { text-align: center; }
+
+.diff-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin: 0 auto 14px;
+}
+
+.diff-card h3 { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+.diff-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+
+/* Roles */
+.roles-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.role-chip {
+  padding: 10px 22px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.role-chip:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(27, 77, 255, 0.25);
+}
+
+/* Hiring Form */
+.hiring-form-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: start;
+}
+
+.hiring-form-info p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.hiring-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.hiring-stat {
+  text-align: center;
+  padding: 20px 12px;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.hiring-stat strong {
+  display: block;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.hiring-stat span { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.hiring-form {
+  background: var(--bg-light);
+  padding: 36px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+.file-upload input[type="file"] { display: none; }
+
+.file-upload-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: var(--transition);
+  background: white;
+}
+
+.file-upload-label:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+@media (max-width: 992px) {
+  .staffing-hero-title { font-size: 36px; }
+  .process-grid { grid-template-columns: repeat(3, 1fr); }
+  .hiring-form-wrapper { grid-template-columns: 1fr; gap: 40px; }
+}
+
+@media (max-width: 600px) {
+  .staffing-hero { padding: 64px 0 56px; }
+  .staffing-hero-title { font-size: 28px; }
+  .process-grid { grid-template-columns: repeat(2, 1fr); }
+}

@@ -1,0 +1,515 @@
+.edtech-hero {
+  background: var(--bg-hero);
+  padding: 100px 0 88px;
+  text-align: center;
+}
+
+/* Course Tabs */
+.course-tabs {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.course-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  box-shadow: var(--shadow-sm);
+}
+
+.course-tab svg {
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+
+.course-tab:hover {
+  border-color: var(--primary-border);
+  color: var(--primary);
+}
+
+.course-tab:hover svg { color: var(--primary); }
+
+.course-tab.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 6px 20px rgba(27, 77, 255, 0.25);
+}
+
+.course-tab.active svg { color: white; }
+
+/* Course Detail Card */
+.course-detail-card {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 48px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 48px;
+  box-shadow: var(--shadow-md);
+}
+
+.course-detail-left {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.course-detail-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  background: var(--primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.course-detail-left h3 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+.course-detail-desc {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.course-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 20px 0;
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.course-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.course-meta-item svg {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.course-meta-item strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.course-tech-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.course-tech-chip {
+  padding: 6px 14px;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Pricing Card */
+.course-pricing-card {
+  background: linear-gradient(160deg, var(--bg-light) 0%, white 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  position: sticky;
+  top: 90px;
+}
+
+.course-price-header {
+  text-align: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 24px;
+}
+
+.course-price-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.course-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.course-price-current {
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--primary);
+  letter-spacing: -1px;
+}
+
+.course-price-original {
+  font-size: 18px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  font-weight: 600;
+}
+
+.course-discount-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  background: var(--secondary-bg);
+  border: 1px solid rgba(0, 135, 90, 0.15);
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.course-features-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.course-features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.course-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.course-feature:last-of-type {
+  border-bottom: none;
+}
+
+.course-feature svg {
+  color: var(--secondary);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.edtech-hero-title {
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1.12;
+  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+
+.edtech-hero-sub {
+  font-size: 17px;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto 32px;
+  line-height: 1.7;
+}
+
+/* Competencies */
+.competency-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.competency-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  background: var(--primary-bg);
+  border: 1px solid var(--primary-border);
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Tech Stack */
+.tech-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.tech-chip {
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.tech-chip:hover {
+  border-color: var(--primary-border);
+  color: var(--primary);
+}
+
+/* Curriculum */
+.curriculum-list {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.curriculum-item {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: var(--transition);
+  box-shadow: var(--shadow-card);
+}
+
+.curriculum-item.open {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(27, 77, 255, 0.06);
+}
+
+.curriculum-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+.curriculum-header:hover {
+  background: var(--bg-light);
+}
+
+.curriculum-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+}
+
+.curriculum-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.curriculum-phase {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.curriculum-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.curriculum-body {
+  padding: 0 24px 24px 84px;
+}
+
+.curriculum-body ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.curriculum-body li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.curriculum-body li svg { color: var(--secondary); flex-shrink: 0; margin-top: 3px; }
+
+.curriculum-project {
+  padding: 12px 16px;
+  background: var(--secondary-bg);
+  border: 1px solid rgba(0, 135, 90, 0.1);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--secondary);
+  font-weight: 500;
+}
+
+/* Outcomes */
+.outcome-card { text-align: center; }
+
+.outcome-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin: 0 auto 16px;
+}
+
+.outcome-card h3 { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+.outcome-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+
+/* Testimonials */
+.testimonial-card { text-align: left; }
+
+.testimonial-text {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-style: italic;
+  margin-bottom: 20px;
+  position: relative;
+  padding-left: 20px;
+  border-left: 3px solid var(--primary-border);
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.testimonial-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.testimonial-author strong { display: block; font-size: 14px; color: var(--text-primary); }
+.testimonial-author span { font-size: 13px; color: var(--text-muted); }
+
+/* Enrollment */
+.enrollment-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: start;
+}
+
+.enrollment-info p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.enrollment-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.enrollment-benefits li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.enrollment-benefits svg { color: var(--secondary); flex-shrink: 0; }
+
+.enrollment-form {
+  background: var(--bg-light);
+  padding: 36px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 992px) {
+  .edtech-hero-title { font-size: 36px; }
+  .enrollment-wrapper { grid-template-columns: 1fr; gap: 40px; }
+  .curriculum-body { padding-left: 24px; }
+  .course-detail-card { grid-template-columns: 1fr; gap: 32px; padding: 36px 28px; }
+  .course-pricing-card { position: static; }
+  .course-meta { grid-template-columns: 1fr; gap: 10px; }
+  .course-tabs { gap: 8px; }
+  .course-tab { padding: 12px 18px; font-size: 13px; }
+}
+
+@media (max-width: 600px) {
+  .edtech-hero { padding: 64px 0 56px; }
+  .edtech-hero-title { font-size: 28px; }
+  .course-detail-left h3 { font-size: 22px; }
+  .course-price-current { font-size: 30px; }
+  .course-tab { width: 100%; justify-content: center; }
+}

@@ -1,0 +1,114 @@
+/* ============================================================
+   Brand Logo — VATE SOFTWARE SYSTEMS
+   Mark: bold sans-serif "V" (navy) + italic serif "S" (crimson)
+   Wordmark: Sora display for VATE SOFTWARE + SYSTEMS
+   ============================================================ */
+
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  line-height: 1;
+}
+
+/* ---- Mark (the VS lockup) ---- */
+.brand-mark {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  height: 40px;
+  padding-right: 4px;
+  font-feature-settings: 'kern' 1, 'liga' 1;
+}
+
+.brand-mark-v {
+  font-family: 'Sora', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 900;
+  font-size: 38px;
+  color: var(--brand-navy);
+  letter-spacing: -2px;
+  line-height: 1;
+  display: inline-block;
+  transform: translateY(2px);
+}
+
+.brand-mark-s {
+  font-family: 'Playfair Display', 'DM Serif Display', Georgia, serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 44px;
+  color: var(--brand-red);
+  line-height: 1;
+  margin-left: -10px;
+  display: inline-block;
+  transform: translateY(2px);
+  text-shadow: 0 1px 0 rgba(200, 16, 46, 0.04);
+}
+
+/* ---- Wordmark (the company name) ---- */
+.brand-wordmark {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1;
+}
+
+.brand-wordmark-main {
+  font-family: 'Sora', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--brand-navy);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.brand-wordmark-sub {
+  font-family: 'Sora', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--brand-navy);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ---- Variants ---- */
+
+/* Compact mark only */
+.brand-logo-compact .brand-wordmark { display: none; }
+
+/* Footer (dark background) */
+.brand-logo-footer .brand-mark-v {
+  color: #F8FAFC;
+}
+.brand-logo-footer .brand-wordmark-main {
+  color: #F1F5F9;
+}
+.brand-logo-footer .brand-wordmark-sub {
+  color: #CBD5E1;
+}
+.brand-logo-footer .brand-mark-s {
+  color: #FF4D6D;
+}
+
+/* Hover affordance */
+.brand-logo:hover .brand-mark-v {
+  transform: translateY(2px) scale(1.02);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.brand-logo:hover .brand-mark-s {
+  transform: translateY(2px) rotate(-2deg);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 600px) {
+  .brand-mark { height: 36px; }
+  .brand-mark-v { font-size: 32px; }
+  .brand-mark-s { font-size: 38px; margin-left: -8px; }
+  .brand-wordmark-main { font-size: 12px; letter-spacing: 1.5px; }
+  .brand-wordmark-sub { font-size: 9px; letter-spacing: 3px; }
+}

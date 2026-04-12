@@ -1,0 +1,220 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.navbar.scrolled {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom-color: var(--border);
+  box-shadow: 0 1px 12px rgba(15, 23, 42, 0.04);
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 68px;
+}
+
+/* Brand logo styles live in BrandLogo.css */
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.navbar-links li {
+  list-style: none;
+}
+
+.nav-link {
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  position: relative;
+}
+
+.nav-link:hover {
+  color: var(--primary);
+  background: var(--primary-bg);
+}
+
+.nav-link.active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+
+/* Right side */
+.nav-right-desktop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-callback-btn {
+  padding: 8px 18px;
+  font-size: 13px;
+}
+
+.nav-login-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 8px 14px;
+}
+
+.nav-login-link:hover {
+  color: var(--primary);
+}
+
+.nav-avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  transition: var(--transition);
+}
+
+.nav-avatar-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 10px rgba(27, 77, 255, 0.3);
+}
+
+.nav-cta-mobile {
+  display: none;
+}
+
+.navbar-overlay {
+  display: none;
+}
+
+.navbar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.navbar-toggle:hover {
+  background: var(--bg-light);
+}
+
+@media (max-width: 1024px) {
+  .navbar-links {
+    position: fixed;
+    top: 68px;
+    right: 0;
+    left: auto;
+    bottom: 0;
+    width: min(320px, calc(100vw - 20px));
+    height: calc(100dvh - 68px);
+    flex-direction: column;
+    background: white;
+    padding: 18px 18px 24px;
+    gap: 8px;
+    align-items: stretch;
+    border-top: 1px solid var(--border);
+    overflow-y: auto;
+    box-shadow: -16px 0 40px rgba(15, 23, 42, 0.12);
+    z-index: 1102;
+    display: none;
+  }
+
+  .navbar-links.active { display: flex; }
+
+  .navbar-links li {
+    width: 100%;
+  }
+
+  .navbar-overlay {
+    display: block;
+    position: fixed;
+    inset: 68px 0 0 0;
+    border: none;
+    background: rgba(15, 23, 42, 0.28);
+    z-index: 1090;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 15px;
+    min-height: 48px;
+    background: #fff;
+    border: 1px solid var(--border-light);
+  }
+
+  .nav-link.active::after { display: none; }
+  .nav-link.active {
+    background: var(--primary-bg);
+    border-color: var(--primary-border);
+  }
+
+  .nav-right-desktop { display: none; }
+
+  .nav-cta-mobile {
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .navbar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1103;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-inner {
+    height: 64px;
+  }
+
+  .navbar-links {
+    top: 64px;
+    width: min(280px, calc(100vw - 12px));
+    height: calc(100dvh - 64px);
+    padding: 14px 14px 20px;
+  }
+
+  .navbar-overlay {
+    inset: 64px 0 0 0;
+  }
+}

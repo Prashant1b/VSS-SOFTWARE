@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 280">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Sora:wght@900&amp;family=Playfair+Display:ital,wght@1,700&amp;display=swap');
+      .v-letter {
+        font-family: 'Sora', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+        font-weight: 900;
+        font-size: 230px;
+        fill: #0A2540;
+      }
+      .s-letter {
+        font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+        font-style: italic;
+        font-weight: 700;
+        font-size: 240px;
+        fill: #C8102E;
+      }
+      .brand-text {
+        font-family: 'Sora', system-ui, sans-serif;
+        font-weight: 700;
+        font-size: 28px;
+        fill: #0A2540;
+        letter-spacing: 8px;
+      }
+      .systems-text {
+        font-family: 'Sora', system-ui, sans-serif;
+        font-weight: 400;
+        font-size: 20px;
+        fill: #0A2540;
+        letter-spacing: 12px;
+      }
+    </style>
+  </defs>
+  <text x="10" y="185" class="v-letter">V</text>
+  <text x="115" y="195" class="s-letter">S</text>
+  <text x="28" y="232" class="brand-text">VATE SOFTWARE</text>
+  <text x="60" y="262" class="systems-text">S Y S T E M S</text>
+</svg>
