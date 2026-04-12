@@ -55,10 +55,6 @@ export default function Home() {
       if (res.data.data?.length) setTransformations(res.data.data)
     }).catch(() => {})
 
-    api.get('/public/testimonials').then(res => {
-      if (res.data.data?.length) setVideoTestimonials(res.data.data)
-    }).catch(() => {})
-
     api.get('/public/hiring-drives').then(res => {
       if (res.data.data?.length) setHiringDrives(res.data.data)
     }).catch(() => {})

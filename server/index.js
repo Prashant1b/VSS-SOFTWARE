@@ -26,9 +26,6 @@ app.use('/api/enrollment', enrollmentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/public', publicRoutes);
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'VSS API is running' });
-});
 
 mongoose
   .connect(process.env.MONGODB_URI)
@@ -40,6 +37,5 @@ mongoose
   })
   .catch((err) => {
     console.error('MongoDB connection error:', err.message);
-    console.error('Server NOT started. Fix MONGODB_URI in .env and retry.');
     process.exit(1);
   });
