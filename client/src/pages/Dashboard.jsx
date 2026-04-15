@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { FiUser, FiBook, FiAward, FiSettings, FiLogOut, FiArrowRight, FiMail, FiPhone, FiEdit2, FiCheck } from 'react-icons/fi'
+import {
+  FiUser, FiBook, FiAward, FiSettings,
+  FiLogOut, FiArrowRight, FiMail,
+  FiPhone, FiEdit2, FiCheck
+} from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 import './Dashboard.css'
 
@@ -18,18 +22,35 @@ const quickLinks = [
 
 export default function Dashboard() {
   const { user, logout, updateProfile } = useAuth()
+
   const [editing, setEditing] = useState(false)
-  const [profileForm, setProfileForm] = useState({ name: user?.name || '', phone: user?.phone || '', institution: user?.institution || '' })
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    phone: '',
+    institution: ''
+  })
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
+
+  // ✅ FIX: sync form when user loads
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        name: user.name || '',
+        phone: user.phone || '',
+        institution: user.institution || ''
+      })
+    }
+  }, [user])
 
   const handleSaveProfile = async () => {
     setSaving(true)
     try {
+      console.log("Sending:", profileForm) // debug
       await updateProfile(profileForm)
       setEditing(false)
-    } catch {
-      // silent fail
+    } catch (err) {
+      console.log("Update error:", err)
     } finally {
       setSaving(false)
     }
