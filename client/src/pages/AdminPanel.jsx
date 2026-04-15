@@ -211,13 +211,12 @@ function DashboardSection() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const token = localStorage.getItem('vss_token')
-    api.get('/admin/dashboard', { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setStats(res.data.stats))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+ useEffect(() => {
+  api.get('/admin/dashboard')
+    .then(res => setStats(res.data.stats))
+    .catch(() => {})
+    .finally(() => setLoading(false))
+}, [])
 
   if (loading) return <div className="admin-loading"><span className="spinner" /></div>
 
@@ -255,12 +254,9 @@ function CrudSection({ endpoint, fields }) {
   const [form, setForm] = useState({})
   const [saving, setSaving] = useState(false)
 
-  const token = localStorage.getItem('vss_token')
-  const headers = { Authorization: `Bearer ${token}` }
-
   const fetchData = useCallback(() => {
     setLoading(true)
-    api.get(`/admin/${endpoint}`, { headers })
+    api.get(`/admin/${endpoint}`, { withCredentials: true })
       .then(res => setData(res.data.data || []))
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -292,9 +288,9 @@ function CrudSection({ endpoint, fields }) {
     setSaving(true)
     try {
       if (editing) {
-        await api.put(`/admin/${endpoint}/${editing}`, form, { headers })
+        await api.put(`/admin/${endpoint}/${editing}`, form, { withCredentials: true })
       } else {
-        await api.post(`/admin/${endpoint}`, form, { headers })
+        await api.post(`/admin/${endpoint}`, form, { withCredentials: true })
       }
       setShowModal(false)
       fetchData()
@@ -308,7 +304,7 @@ function CrudSection({ endpoint, fields }) {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return
     try {
-      await api.delete(`/admin/${endpoint}/${id}`, { headers })
+      await api.delete(`/admin/${endpoint}/${id}`, { withCredentials: true })
       fetchData()
     } catch {
       alert('Error deleting')
@@ -438,12 +434,9 @@ function ReadOnlySection({ endpoint, columns, canDelete }) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const token = localStorage.getItem('vss_token')
-  const headers = { Authorization: `Bearer ${token}` }
-
   const fetchData = useCallback(() => {
     setLoading(true)
-    api.get(`/admin/${endpoint}`, { headers })
+    api.get(`/admin/${endpoint}`, { withCredentials: true })
       .then(res => setData(res.data.data || []))
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -454,7 +447,7 @@ function ReadOnlySection({ endpoint, columns, canDelete }) {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return
     try {
-      await api.delete(`/admin/${endpoint}/${id}`, { headers })
+      await api.delete(`/admin/${endpoint}/${id}`, { withCredentials: true })
       fetchData()
     } catch {
       alert('Error deleting')
