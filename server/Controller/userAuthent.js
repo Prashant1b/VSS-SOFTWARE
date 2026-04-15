@@ -14,14 +14,14 @@ const issueAuth = (res, user) => {
   const token = jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: '1h' }
+    { expiresIn: '5d' }
   );
 
   res.cookie('token', token, {
     httpOnly: true,
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 1000,
+    maxAge: 5 * 24 * 60 * 60 * 1000,
   });
 };
 

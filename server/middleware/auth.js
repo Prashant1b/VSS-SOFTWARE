@@ -4,18 +4,14 @@ import redisClient from '../config/redis.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vss_jwt_secret_key_change_in_production';
 
-export function generateToken(userId) {
-  return jwt.sign( { id: user._id , role: user.role}, JWT_SECRET, { expiresIn: '7d' });
-}
 
 export async function protect(req, res, next){
      try{
          const token=req.cookies.token;
          if(!token) throw new Error("Token is missing");
-          const payload=jwt.verify(token , process.env.key);
-            const {_id}=payload;
-            if(!_id) throw new Error("Id is missing");
-            const user=await User.findById(_id);
+          const payload=jwt.verify(token , process.env.JWT_SECRET);
+            const { id } = payload;
+            const user = await User.findById(id);
             if(!user) throw new Error("User doesn't exists");
             // aab ham check karnege ki redis ke block list me to nhi hai
             const isblocked=await redisClient.exists(`blocked_${token}`);

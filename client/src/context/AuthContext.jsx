@@ -2,61 +2,36 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import api from '../api'
 
 const AuthContext = createContext(null)
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  const [token, setToken] = useState(localStorage.getItem('vss_token'))
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      api.get('/auth/me')
-        .then(res => setUser(res.data.user))
-        .catch(() => {
-          localStorage.removeItem('vss_token')
-          setToken(null)
-          delete api.defaults.headers.common['Authorization']
-        })
-        .finally(() => setLoading(false))
-    } else {
-      setLoading(false)
-    }
-  }, [token])
+    api.get('/auth/me', { withCredentials: true })
+      .then(res => setUser(res.data.user))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false))
+  }, [])
 
   const login = async (email, password) => {
-    const res = await api.post('/auth/login', { email, password })
-    localStorage.setItem('vss_token', res.data.token)
-    api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
-    setToken(res.data.token)
+    const res = await api.post('/auth/login', { email, password }, { withCredentials: true })
     setUser(res.data.user)
     return res.data
   }
 
   const register = async (data) => {
-    const res = await api.post('/auth/register', data)
-    localStorage.setItem('vss_token', res.data.token)
-    api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
-    setToken(res.data.token)
+    const res = await api.post('/auth/register', data, { withCredentials: true })
     setUser(res.data.user)
     return res.data
   }
 
-  const logout = () => {
-    localStorage.removeItem('vss_token')
-    delete api.defaults.headers.common['Authorization']
-    setToken(null)
+  const logout = async () => {
+    await api.post('/auth/logout', {}, { withCredentials: true })
     setUser(null)
   }
 
-  const updateProfile = async (data) => {
-    const res = await api.put('/auth/me', data)
-    setUser(res.data.user)
-    return res.data
-  }
-
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

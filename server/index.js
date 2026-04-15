@@ -10,13 +10,19 @@ import recruitmentRoutes from './routes/recruitment.js';
 import enrollmentRoutes from './routes/enrollment.js';
 import adminRoutes from './routes/admin.js';
 import publicRoutes from './routes/public.js';
-
+import cookieParser from 'cookie-parser';
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+app.use(cookieParser());
 
-app.use(cors());
+
+
+app.use(cors({
+  origin: process.env.CLIENT_URL,
+  credentials: true
+}));
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
