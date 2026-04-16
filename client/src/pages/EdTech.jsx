@@ -303,7 +303,7 @@ export default function EdTech() {
             <div className="section-header">
               <span className="section-label">EdTech and Training</span>
               <h2 className="section-title">No active courses found</h2>
-              <p className="section-subtitle">Add courses from the admin panel and they will appear here automatically.</p>
+              <p className="section-subtitle">No Course available </p>
             </div>
           </div>
         </section>
@@ -337,7 +337,7 @@ export default function EdTech() {
           <div className="section-header">
             <span className="section-label">Our Courses</span>
             <h2 className="section-title">Choose Your Learning Path</h2>
-            <p className="section-subtitle">These tabs are loaded from MongoDB, so anything you change in admin can appear here.</p>
+
           </div>
 
           <div className="course-tabs">
@@ -428,7 +428,6 @@ export default function EdTech() {
                         <span className="course-price-current">{activeCourse.displayPrice}</span>
                         {activeCourse.displayOriginalPrice && <span className="course-price-original">{activeCourse.displayOriginalPrice}</span>}
                       </div>
-                      <span className="course-discount-badge">Managed from admin panel</span>
                     </div>
                     <div className="course-features-list">
                       <p className="course-features-title">What is Included</p>
