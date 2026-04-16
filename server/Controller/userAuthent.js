@@ -19,9 +19,9 @@ const issueAuth = (res, user) => {
 
   res.cookie('token', token, {
     httpOnly: true,
-    secure: false,           
-    sameSite: 'lax',
-    maxAge: 5 * 24 * 60 * 60 * 1000  
+    secure: true,           
+    sameSite: 'none',       
+    maxAge: 5 * 24 * 60 * 60 * 1000
   });
 };
 
