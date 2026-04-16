@@ -17,11 +17,12 @@ const issueAuth = (res, user) => {
     { expiresIn: '5d' }
   );
 
- res.cookie('token', token, {
-  httpOnly: true,
-  secure: false, // true in production (HTTPS)
-  sameSite: 'lax'
-})
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: false,           
+    sameSite: 'lax',
+    maxAge: 5 * 24 * 60 * 60 * 1000  
+  });
 };
 
 const sendOtpEmail = async (email, otp, purpose) => {
