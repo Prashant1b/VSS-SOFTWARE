@@ -141,7 +141,7 @@ export default function Resources() {
                   <div className="contact-method-icon"><FiMail size={18} /></div>
                   <div>
                     <strong>Email</strong>
-                    <a href="mailto:vatedigital@gmail.com">vatedigital@gmail.com</a>
+                    <a href="mailto:vatedigital@gmail.com">sales@vatedigi.com</a>
                   </div>
                 </div>
                 <div className="contact-method">
