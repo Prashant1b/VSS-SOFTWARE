@@ -4,7 +4,6 @@
   padding: 40px 0 80px;
 }
 
-/* Header */
 .dash-header {
   display: flex;
   align-items: center;
@@ -37,7 +36,6 @@
   font-size: 26px;
   font-weight: 800;
   color: var(--text-primary);
-  letter-spacing: -0.3px;
 }
 
 .dash-header p {
@@ -51,7 +49,6 @@
   font-size: 13px;
 }
 
-/* Tabs */
 .dash-tabs {
   display: flex;
   gap: 4px;
@@ -75,17 +72,12 @@
   font-family: inherit;
 }
 
-.dash-tab:hover {
-  color: var(--primary);
-}
-
 .dash-tab.active {
   background: var(--primary);
   color: white;
   font-weight: 600;
 }
 
-/* Stats */
 .dash-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -127,7 +119,6 @@
   font-weight: 500;
 }
 
-/* Section Title */
 .dash-section-title {
   font-size: 20px;
   font-weight: 700;
@@ -135,11 +126,69 @@
   margin-bottom: 20px;
 }
 
-/* Quick Links */
-.dash-quick-links {
+.dash-placeholder-card,
+.dash-enrolled-card,
+.dash-demo-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.dash-placeholder-card {
+  padding: 18px 20px;
+  margin-bottom: 28px;
+  color: var(--text-secondary);
+}
+
+.dash-enrolled-grid,
+.dash-demo-list,
+.dash-quick-links,
+.dash-courses {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.dash-enrolled-grid,
+.dash-demo-list {
+  margin-bottom: 28px;
+}
+
+.dash-enrolled-card,
+.dash-demo-card,
+.dash-course-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 20px 24px;
+}
+
+.dash-enrolled-card h3,
+.dash-demo-card h3,
+.dash-course-info h3,
+.dash-quick-card h3 {
+  font-size: 16px;
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+
+.dash-enrolled-card p,
+.dash-demo-card p,
+.dash-course-info p,
+.dash-quick-card p,
+.dash-meta-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.dash-enrolled-actions,
+.dash-course-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
 }
 
 .dash-quick-card {
@@ -147,7 +196,6 @@
   align-items: center;
   gap: 16px;
   padding: 20px 24px;
-  cursor: pointer;
 }
 
 .dash-quick-icon {
@@ -162,55 +210,9 @@
   flex-shrink: 0;
 }
 
-.dash-quick-card h3 {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.dash-quick-card p {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
-
 .dash-quick-arrow {
   margin-left: auto;
   color: var(--text-muted);
-}
-
-/* Courses */
-.dash-courses {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.dash-course-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 28px;
-  gap: 16px;
-}
-
-.dash-course-info h3 {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.dash-course-info p {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.dash-course-status {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
 }
 
 .status-badge {
@@ -237,7 +239,6 @@
   font-size: 13px;
 }
 
-/* Profile */
 .dash-profile-card {
   background: white;
   border: 1px solid var(--border);
@@ -305,9 +306,30 @@
 }
 
 @media (max-width: 768px) {
-  .dash-header { flex-direction: column; align-items: flex-start; }
-  .dash-stats { grid-template-columns: 1fr; }
-  .dash-tabs { overflow-x: auto; }
-  .dash-course-card { flex-direction: column; align-items: flex-start; }
-  .dash-profile-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .dash-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dash-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-tabs {
+    overflow-x: auto;
+  }
+
+  .dash-enrolled-card,
+  .dash-demo-card,
+  .dash-course-card,
+  .dash-enrolled-actions,
+  .dash-course-status,
+  .dash-profile-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dash-profile-row {
+    gap: 4px;
+  }
 }

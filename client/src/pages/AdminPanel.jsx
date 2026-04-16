@@ -4,7 +4,7 @@ import {
   FiHome, FiUsers, FiBookOpen, FiMessageSquare, FiBriefcase,
   FiBarChart2, FiStar, FiMail, FiFileText, FiArrowLeft,
   FiPlus, FiEdit2, FiTrash2, FiX, FiMenu, FiCheckCircle,
-  FiAlertCircle, FiLogOut
+  FiAlertCircle, FiLogOut,
 } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
@@ -24,83 +24,6 @@ const SECTIONS = [
   { key: 'recruitments', label: 'Recruitments', icon: <FiBriefcase size={18} /> },
 ]
 
-export default function AdminPanel() {
-  const [activeSection, setActiveSection] = useState('dashboard')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    if (user && user.role !== 'admin') {
-      navigate('/dashboard')
-    }
-  }, [user, navigate])
-
-  const handleNav = (key) => {
-    setActiveSection(key)
-    setSidebarOpen(false)
-  }
-
-  return (
-    <div className="admin-layout">
-      <button className="admin-mobile-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        <FiMenu size={20} />
-      </button>
-
-      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="admin-sidebar-header">
-          <h2>VSS ADMIN</h2>
-          <p>VATE SOFTWARE SYSTEMS</p>
-        </div>
-        <nav className="admin-nav">
-          {SECTIONS.map((s, i) => (
-            <div key={s.key}>
-              {s.section && <div className="admin-nav-section">{s.section}</div>}
-              {i === 0 && <div className="admin-nav-section">Overview</div>}
-              <button
-                className={`admin-nav-item ${activeSection === s.key ? 'active' : ''}`}
-                onClick={() => handleNav(s.key)}
-              >
-                {s.icon} {s.label}
-              </button>
-            </div>
-          ))}
-        </nav>
-        <div className="admin-sidebar-footer">
-          <Link to="/" className="admin-back-btn"><FiArrowLeft size={14} /> Back to Website</Link>
-        </div>
-      </aside>
-
-      <div className="admin-main">
-        <div className="admin-topbar">
-          <h1>{SECTIONS.find(s => s.key === activeSection)?.label}</h1>
-          <div className="admin-topbar-actions">
-            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{user?.name}</span>
-            <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={logout}>
-              <FiLogOut size={14} /> Logout
-            </button>
-          </div>
-        </div>
-        <div className="admin-content">
-          {activeSection === 'dashboard' && <DashboardSection />}
-          {activeSection === 'placements' && <CrudSection endpoint="placements" fields={placementFields} />}
-          {activeSection === 'courses' && <CrudSection endpoint="courses" fields={courseFields} />}
-          {activeSection === 'testimonials' && <CrudSection endpoint="testimonials" fields={testimonialFields} />}
-          {activeSection === 'hiring' && <CrudSection endpoint="hiring-drives" fields={hiringFields} />}
-          {activeSection === 'stats' && <CrudSection endpoint="stats" fields={statFields} />}
-          {activeSection === 'partners' && <CrudSection endpoint="partners" fields={partnerFields} />}
-          {activeSection === 'users' && <ReadOnlySection endpoint="users" columns={userColumns} canDelete />}
-          {activeSection === 'contacts' && <ReadOnlySection endpoint="contacts" columns={contactColumns} canDelete />}
-          {activeSection === 'enrollments' && <ReadOnlySection endpoint="enrollments" columns={enrollmentColumns} canDelete />}
-          {activeSection === 'recruitments' && <ReadOnlySection endpoint="recruitments" columns={recruitmentColumns} canDelete />}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ==================== Field Definitions ====================
-
 const placementFields = [
   { key: 'name', label: 'Student Name', required: true },
   { key: 'initials', label: 'Initials', required: true, placeholder: 'e.g. AS' },
@@ -113,12 +36,18 @@ const placementFields = [
 
 const courseFields = [
   { key: 'title', label: 'Course Title', required: true },
-  { key: 'slug', label: 'Slug', required: true, placeholder: 'e.g. full-stack-development' },
-  { key: 'duration', label: 'Duration', required: true, placeholder: 'e.g. 8 Months' },
-  { key: 'price', label: 'Price', required: true, placeholder: 'e.g. ₹65,000' },
-  { key: 'students', label: 'Students Count', placeholder: 'e.g. 300+' },
-  { key: 'rating', label: 'Rating', placeholder: 'e.g. 4.8' },
+  { key: 'slug', label: 'Slug', required: true, placeholder: 'e.g. genai' },
+  { key: 'duration', label: 'Duration', required: true, placeholder: 'e.g. 60 Hours' },
+  { key: 'price', label: 'Price', required: true, placeholder: 'e.g. Rs 45,000' },
+  { key: 'amount', label: 'Amount (INR)', required: true, type: 'number', placeholder: 'e.g. 45000' },
+  { key: 'originalPrice', label: 'Original Price', placeholder: 'e.g. Rs 60,000' },
+  { key: 'mode', label: 'Mode', placeholder: 'e.g. Online / Self-Paced' },
+  { key: 'students', label: 'Students Count', placeholder: 'e.g. 150+' },
+  { key: 'rating', label: 'Rating', placeholder: 'e.g. 4.9' },
   { key: 'description', label: 'Description', type: 'textarea' },
+  { key: 'features', label: 'Features', type: 'textarea', placeholder: 'One feature per line or comma separated' },
+  { key: 'techStack', label: 'Tech Stack', type: 'textarea', placeholder: 'One tech item per line or comma separated' },
+  { key: 'demoVideoUrl', label: 'Demo Video URL', placeholder: 'https://...' },
   { key: 'order', label: 'Display Order', type: 'number' },
   { key: 'isActive', label: 'Active', type: 'checkbox' },
 ]
@@ -146,7 +75,7 @@ const statFields = [
   { key: 'key', label: 'Key (unique ID)', required: true, placeholder: 'e.g. students_placed' },
   { key: 'label', label: 'Display Label', required: true, placeholder: 'e.g. Students Placed' },
   { key: 'value', label: 'Value', required: true, type: 'number' },
-  { key: 'suffix', label: 'Suffix', placeholder: 'e.g. +, LPA, %' },
+  { key: 'suffix', label: 'Suffix', placeholder: 'e.g. +' },
   { key: 'order', label: 'Display Order', type: 'number' },
 ]
 
@@ -156,14 +85,12 @@ const partnerFields = [
   { key: 'isActive', label: 'Active', type: 'checkbox' },
 ]
 
-// ==================== Column Definitions for Read-Only ====================
-
 const userColumns = [
   { key: 'name', label: 'Name' },
   { key: 'email', label: 'Email' },
-  { key: 'role', label: 'Role', render: (v) => <span className={`admin-badge admin-badge-${v}`}>{v}</span> },
+  { key: 'role', label: 'Role', render: (value) => <span className={`admin-badge admin-badge-${value}`}>{value}</span> },
   { key: 'phone', label: 'Phone' },
-  { key: 'createdAt', label: 'Joined', render: (v) => new Date(v).toLocaleDateString() },
+  { key: 'createdAt', label: 'Joined', render: (value) => new Date(value).toLocaleDateString() },
 ]
 
 const contactColumns = [
@@ -172,7 +99,7 @@ const contactColumns = [
   { key: 'phone', label: 'Phone' },
   { key: 'subject', label: 'Subject' },
   { key: 'message', label: 'Message' },
-  { key: 'createdAt', label: 'Date', render: (v) => new Date(v).toLocaleDateString() },
+  { key: 'createdAt', label: 'Date', render: (value) => new Date(value).toLocaleDateString() },
 ]
 
 const enrollmentColumns = [
@@ -180,8 +107,10 @@ const enrollmentColumns = [
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
   { key: 'course', label: 'Course' },
+  { key: 'status', label: 'Status', render: (value) => <span className={`admin-badge ${value === 'paid' ? 'admin-badge-active' : 'admin-badge-student'}`}>{value || 'lead'}</span> },
   { key: 'institution', label: 'Institution' },
-  { key: 'createdAt', label: 'Date', render: (v) => new Date(v).toLocaleDateString() },
+  { key: 'demoSlotAt', label: 'Demo Slot', render: (value) => value ? new Date(value).toLocaleString() : '-' },
+  { key: 'createdAt', label: 'Date', render: (value) => new Date(value).toLocaleDateString() },
 ]
 
 const uploadsBaseUrl = api.defaults.baseURL.replace(/\/api\/?$/, '')
@@ -196,27 +125,101 @@ const recruitmentColumns = [
   {
     key: 'jdFile',
     label: 'Resume/JD',
-    render: (v) => v ? (
-      <a href={`${uploadsBaseUrl}/uploads/${v}`} target="_blank" rel="noreferrer">
+    render: (value) => value ? (
+      <a href={`${uploadsBaseUrl}/uploads/${value}`} target="_blank" rel="noreferrer">
         View File
       </a>
-    ) : '—',
+    ) : '-',
   },
-  { key: 'createdAt', label: 'Date', render: (v) => new Date(v).toLocaleDateString() },
+  { key: 'createdAt', label: 'Date', render: (value) => new Date(value).toLocaleDateString() },
 ]
 
-// ==================== Dashboard Section ====================
+export default function AdminPanel() {
+  const [activeSection, setActiveSection] = useState('dashboard')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      navigate('/dashboard')
+    }
+  }, [user, navigate])
+
+  const handleNav = (key) => {
+    setActiveSection(key)
+    setSidebarOpen(false)
+  }
+
+  return (
+    <div className="admin-layout">
+      <button className="admin-mobile-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+        <FiMenu size={20} />
+      </button>
+      {sidebarOpen && <button className="admin-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-label="Close admin sidebar" />}
+
+      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <div className="admin-sidebar-header">
+          <h2>VSS ADMIN</h2>
+          <p>VATE SOFTWARE SYSTEMS</p>
+        </div>
+        <nav className="admin-nav">
+          {SECTIONS.map((section, index) => (
+            <div key={section.key}>
+              {section.section && <div className="admin-nav-section">{section.section}</div>}
+              {index === 0 && <div className="admin-nav-section">Overview</div>}
+              <button
+                className={`admin-nav-item ${activeSection === section.key ? 'active' : ''}`}
+                onClick={() => handleNav(section.key)}
+              >
+                {section.icon} {section.label}
+              </button>
+            </div>
+          ))}
+        </nav>
+        <div className="admin-sidebar-footer">
+          <Link to="/" className="admin-back-btn"><FiArrowLeft size={14} /> Back to Website</Link>
+        </div>
+      </aside>
+
+      <div className="admin-main">
+        <div className="admin-topbar">
+          <h1>{SECTIONS.find((section) => section.key === activeSection)?.label}</h1>
+          <div className="admin-topbar-actions">
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{user?.name}</span>
+            <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={logout}>
+              <FiLogOut size={14} /> Logout
+            </button>
+          </div>
+        </div>
+        <div className="admin-content">
+          {activeSection === 'dashboard' && <DashboardSection />}
+          {activeSection === 'placements' && <CrudSection endpoint="placements" fields={placementFields} />}
+          {activeSection === 'courses' && <CrudSection endpoint="courses" fields={courseFields} />}
+          {activeSection === 'testimonials' && <CrudSection endpoint="testimonials" fields={testimonialFields} />}
+          {activeSection === 'hiring' && <CrudSection endpoint="hiring-drives" fields={hiringFields} />}
+          {activeSection === 'stats' && <CrudSection endpoint="stats" fields={statFields} />}
+          {activeSection === 'partners' && <CrudSection endpoint="partners" fields={partnerFields} />}
+          {activeSection === 'users' && <ReadOnlySection endpoint="users" columns={userColumns} canDelete />}
+          {activeSection === 'contacts' && <ReadOnlySection endpoint="contacts" columns={contactColumns} canDelete />}
+          {activeSection === 'enrollments' && <ReadOnlySection endpoint="enrollments" columns={enrollmentColumns} canDelete />}
+          {activeSection === 'recruitments' && <ReadOnlySection endpoint="recruitments" columns={recruitmentColumns} canDelete />}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function DashboardSection() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
- useEffect(() => {
-  api.get('/admin/dashboard')
-    .then(res => setStats(res.data.stats))
-    .catch(() => {})
-    .finally(() => setLoading(false))
-}, [])
+  useEffect(() => {
+    api.get('/admin/dashboard')
+      .then((res) => setStats(res.data.stats))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
   if (loading) return <div className="admin-loading"><span className="spinner" /></div>
 
@@ -230,21 +233,17 @@ function DashboardSection() {
   ]
 
   return (
-    <div>
-      <div className="admin-stats-grid">
-        {cards.map(c => (
-          <div key={c.label} className="admin-stat-card">
-            <div className="stat-icon" style={{ background: c.color, color: c.iconColor }}>{c.icon}</div>
-            <div className="stat-value">{c.value}</div>
-            <div className="stat-label">{c.label}</div>
-          </div>
-        ))}
-      </div>
+    <div className="admin-stats-grid">
+      {cards.map((card) => (
+        <div key={card.label} className="admin-stat-card">
+          <div className="stat-icon" style={{ background: card.color, color: card.iconColor }}>{card.icon}</div>
+          <div className="stat-value">{card.value}</div>
+          <div className="stat-label">{card.label}</div>
+        </div>
+      ))}
     </div>
   )
 }
-
-// ==================== CRUD Section (Reusable) ====================
 
 function CrudSection({ endpoint, fields }) {
   const [data, setData] = useState([])
@@ -257,19 +256,21 @@ function CrudSection({ endpoint, fields }) {
   const fetchData = useCallback(() => {
     setLoading(true)
     api.get(`/admin/${endpoint}`, { withCredentials: true })
-      .then(res => setData(res.data.data || []))
+      .then((res) => setData(res.data.data || []))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [endpoint])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const openAdd = () => {
     const initial = {}
-    fields.forEach(f => {
-      if (f.type === 'checkbox') initial[f.key] = true
-      else if (f.type === 'number') initial[f.key] = f.key === 'rating' ? 5 : 0
-      else initial[f.key] = ''
+    fields.forEach((field) => {
+      if (field.type === 'checkbox') initial[field.key] = true
+      else if (field.type === 'number') initial[field.key] = 0
+      else initial[field.key] = ''
     })
     setForm(initial)
     setEditing(null)
@@ -278,7 +279,9 @@ function CrudSection({ endpoint, fields }) {
 
   const openEdit = (item) => {
     const formData = {}
-    fields.forEach(f => { formData[f.key] = item[f.key] ?? '' })
+    fields.forEach((field) => {
+      formData[field.key] = item[field.key] ?? ''
+    })
     setForm(formData)
     setEditing(item._id)
     setShowModal(true)
@@ -294,8 +297,8 @@ function CrudSection({ endpoint, fields }) {
       }
       setShowModal(false)
       fetchData()
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error saving')
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error saving')
     } finally {
       setSaving(false)
     }
@@ -311,7 +314,7 @@ function CrudSection({ endpoint, fields }) {
     }
   }
 
-  const displayColumns = fields.filter(f => f.type !== 'textarea' && f.key !== 'order')
+  const displayColumns = fields.filter((field) => field.type !== 'textarea' && field.key !== 'order')
 
   if (loading) return <div className="admin-loading"><span className="spinner" /></div>
 
@@ -331,47 +334,47 @@ function CrudSection({ endpoint, fields }) {
             <p>No items yet. Click "Add New" to create one.</p>
           </div>
         ) : (
-          <table className="admin-table">
-            <thead>
-              <tr>
-                {displayColumns.map(f => <th key={f.key}>{f.label}</th>)}
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map(item => (
-                <tr key={item._id}>
-                  {displayColumns.map(f => (
-                    <td key={f.key}>
-                      {f.type === 'checkbox' ? (
-                        <span className={`admin-badge ${item[f.key] ? 'admin-badge-active' : 'admin-badge-inactive'}`}>
-                          {item[f.key] ? 'Active' : 'Inactive'}
-                        </span>
-                      ) : (
-                        String(item[f.key] ?? '')
-                      )}
-                    </td>
-                  ))}
-                  <td>
-                    <div className="actions">
-                      <button className="btn-admin btn-admin-edit btn-admin-sm" onClick={() => openEdit(item)}>
-                        <FiEdit2 size={12} />
-                      </button>
-                      <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={() => handleDelete(item._id)}>
-                        <FiTrash2 size={12} />
-                      </button>
-                    </div>
-                  </td>
+          <div className="admin-table-scroll">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  {displayColumns.map((field) => <th key={field.key}>{field.label}</th>)}
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.map((item) => (
+                  <tr key={item._id}>
+                    {displayColumns.map((field) => (
+                      <td key={field.key} data-label={field.label}>
+                        {field.type === 'checkbox' ? (
+                          <span className={`admin-badge ${item[field.key] ? 'admin-badge-active' : 'admin-badge-inactive'}`}>
+                            {item[field.key] ? 'Active' : 'Inactive'}
+                          </span>
+                        ) : String(item[field.key] ?? '')}
+                      </td>
+                    ))}
+                    <td data-label="Actions">
+                      <div className="actions">
+                        <button className="btn-admin btn-admin-edit btn-admin-sm" onClick={() => openEdit(item)}>
+                          <FiEdit2 size={12} />
+                        </button>
+                        <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={() => handleDelete(item._id)}>
+                          <FiTrash2 size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       {showModal && (
         <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="admin-modal" onClick={e => e.stopPropagation()}>
+          <div className="admin-modal" onClick={(event) => event.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>{editing ? 'Edit Item' : 'Add New Item'}</h3>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -379,37 +382,37 @@ function CrudSection({ endpoint, fields }) {
               </button>
             </div>
             <div className="admin-modal-body">
-              {fields.map(f => (
-                <div key={f.key} className="admin-form-group">
-                  <label>{f.label} {f.required && <span style={{ color: 'var(--brand-red)' }}>*</span>}</label>
-                  {f.type === 'textarea' ? (
+              {fields.map((field) => (
+                <div key={field.key} className="admin-form-group">
+                  <label>{field.label} {field.required && <span style={{ color: 'var(--brand-red)' }}>*</span>}</label>
+                  {field.type === 'textarea' ? (
                     <textarea
-                      value={form[f.key] || ''}
-                      onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                      placeholder={f.placeholder}
+                      value={form[field.key] || ''}
+                      onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
+                      placeholder={field.placeholder}
                     />
-                  ) : f.type === 'select' ? (
-                    <select value={form[f.key] || ''} onChange={e => setForm({ ...form, [f.key]: e.target.value })}>
+                  ) : field.type === 'select' ? (
+                    <select value={form[field.key] || ''} onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}>
                       <option value="">Select...</option>
-                      {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+                      {field.options.map((option) => <option key={option} value={option}>{option}</option>)}
                     </select>
-                  ) : f.type === 'checkbox' ? (
+                  ) : field.type === 'checkbox' ? (
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <input
                         type="checkbox"
-                        checked={!!form[f.key]}
-                        onChange={e => setForm({ ...form, [f.key]: e.target.checked })}
+                        checked={!!form[field.key]}
+                        onChange={(event) => setForm({ ...form, [field.key]: event.target.checked })}
                         style={{ width: 'auto' }}
                       />
-                      <span style={{ fontSize: 14 }}>{form[f.key] ? 'Active' : 'Inactive'}</span>
+                      <span style={{ fontSize: 14 }}>{form[field.key] ? 'Active' : 'Inactive'}</span>
                     </label>
                   ) : (
                     <input
-                      type={f.type || 'text'}
-                      value={form[f.key] ?? ''}
-                      onChange={e => setForm({ ...form, [f.key]: f.type === 'number' ? Number(e.target.value) : e.target.value })}
-                      placeholder={f.placeholder}
-                      required={f.required}
+                      type={field.type || 'text'}
+                      value={form[field.key] ?? ''}
+                      onChange={(event) => setForm({ ...form, [field.key]: field.type === 'number' ? Number(event.target.value) : event.target.value })}
+                      placeholder={field.placeholder}
+                      required={field.required}
                     />
                   )}
                 </div>
@@ -428,8 +431,6 @@ function CrudSection({ endpoint, fields }) {
   )
 }
 
-// ==================== Read-Only Section ====================
-
 function ReadOnlySection({ endpoint, columns, canDelete }) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -437,12 +438,14 @@ function ReadOnlySection({ endpoint, columns, canDelete }) {
   const fetchData = useCallback(() => {
     setLoading(true)
     api.get(`/admin/${endpoint}`, { withCredentials: true })
-      .then(res => setData(res.data.data || []))
+      .then((res) => setData(res.data.data || []))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [endpoint])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return
@@ -467,32 +470,34 @@ function ReadOnlySection({ endpoint, columns, canDelete }) {
           <p>No records found.</p>
         </div>
       ) : (
-        <table className="admin-table">
-          <thead>
-            <tr>
-              {columns.map(c => <th key={c.key}>{c.label}</th>)}
-              {canDelete && <th>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map(item => (
-              <tr key={item._id}>
-                {columns.map(c => (
-                  <td key={c.key}>
-                    {c.render ? c.render(item[c.key]) : (item[c.key] ?? '—')}
-                  </td>
-                ))}
-                {canDelete && (
-                  <td>
-                    <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={() => handleDelete(item._id)}>
-                      <FiTrash2 size={12} />
-                    </button>
-                  </td>
-                )}
+        <div className="admin-table-scroll">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                {columns.map((column) => <th key={column.key}>{column.label}</th>)}
+                {canDelete && <th>Actions</th>}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.map((item) => (
+                <tr key={item._id}>
+                  {columns.map((column) => (
+                    <td key={column.key} data-label={column.label}>
+                      {column.render ? column.render(item[column.key]) : (item[column.key] ?? '-')}
+                    </td>
+                  ))}
+                  {canDelete && (
+                    <td data-label="Actions">
+                      <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={() => handleDelete(item._id)}>
+                        <FiTrash2 size={12} />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

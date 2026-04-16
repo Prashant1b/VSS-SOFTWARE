@@ -5,7 +5,11 @@ const router = express.Router();
 
 router.post('/', async (req, res) => {
   try {
-    const enrollment = new Enrollment(req.body);
+    const enrollment = new Enrollment({
+      ...req.body,
+      source: 'website_lead',
+      status: 'lead',
+    });
     await enrollment.save();
     res.status(201).json({ success: true, message: 'Enrollment request submitted successfully!' });
   } catch (error) {

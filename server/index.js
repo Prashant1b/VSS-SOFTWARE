@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import contactRoutes from './routes/contact.js';
 import recruitmentRoutes from './routes/recruitment.js';
 import enrollmentRoutes from './routes/enrollment.js';
+import courseEnrollmentRoutes from './routes/courseEnrollment.js';
 import adminRoutes from './routes/admin.js';
 import publicRoutes from './routes/public.js';
 import cookieParser from 'cookie-parser';
@@ -33,6 +34,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/recruitment', recruitmentRoutes);
 app.use('/api/enrollment', enrollmentRoutes);
+app.use('/api/course-enrollment', courseEnrollmentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/public', publicRoutes);
 
