@@ -55,7 +55,7 @@ export default function Footer() {
             <ul className="footer-contact">
               <li>
                 <FiMail size={14} />
-                <a href="mailto:vatedigital@gmail.com">vatedigital@gmail.com</a>
+                <a href="mailto:vatedigital@gmail.com">sales@vatedigi.com</a>
               </li>
               <li>
                 <FiPhone size={14} />
