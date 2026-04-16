@@ -14,6 +14,28 @@ import Recruitment from '../models/Recruitment.js';
 
 const router = express.Router();
 
+const normalizeListInput = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(/\r?\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const normalizeCoursePayload = (payload) => ({
+  ...payload,
+  features: normalizeListInput(payload.features),
+  techStack: normalizeListInput(payload.techStack),
+  highlights: normalizeListInput(payload.highlights),
+});
+
 // All admin routes require auth + admin role
 router.use(protect, requireAdmin);
 
@@ -103,7 +125,7 @@ router.get('/courses', async (req, res) => {
 
 router.post('/courses', async (req, res) => {
   try {
-    const item = new Course(req.body);
+    const item = new Course(normalizeCoursePayload(req.body));
     await item.save();
     res.status(201).json({ success: true, data: item });
   } catch (error) {
@@ -113,7 +135,7 @@ router.post('/courses', async (req, res) => {
 
 router.put('/courses/:id', async (req, res) => {
   try {
-    const item = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const item = await Course.findByIdAndUpdate(req.params.id, normalizeCoursePayload(req.body), { new: true });
     res.json({ success: true, data: item });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
