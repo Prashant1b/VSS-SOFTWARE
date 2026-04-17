@@ -23,6 +23,11 @@ export default function Signup() {
 
   const navigate = useNavigate()
 
+  const handlePhoneChange = (event) => {
+    const phone = event.target.value.replace(/\D/g, '').slice(0, 10)
+    setForm({ ...form, phone })
+  }
+
   // SEND OTP
   const handleSendOtp = async () => {
     try {
@@ -50,6 +55,12 @@ export default function Signup() {
     setError('')
     setSuccess('')
     setLoading(true)
+
+    if (form.phone.length !== 10) {
+      setError('Mobile number must be 10 digits')
+      setLoading(false)
+      return
+    }
 
     try {
       await api.post('/auth/register', form)
@@ -159,14 +170,18 @@ export default function Signup() {
 
             {/* PHONE */}
             <div className="form-group">
-              <label>Phone</label>
+              <label>Mobile Number *</label>
               <div className="input-icon-wrapper">
                 <FiPhone size={16} className="input-icon" />
                 <input
                   type="tel"
-                  placeholder="+91 9876543210"
+                  placeholder="9876543210"
                   value={form.phone}
-                  onChange={e => setForm({ ...form, phone: e.target.value })}
+                  onChange={handlePhoneChange}
+                  maxLength={10}
+                  pattern="[0-9]{10}"
+                  inputMode="numeric"
+                  required
                 />
               </div>
             </div>
