@@ -28,6 +28,7 @@ export default function Dashboard() {
   const { user, logout, updateProfile } = useAuth()
   const [editing, setEditing] = useState(false)
   const [profileForm, setProfileForm] = useState({ name: '', phone: '', institution: '' })
+  const [profileFeedback, setProfileFeedback] = useState({ type: '', message: '' })
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [enrollments, setEnrollments] = useState([])
@@ -62,13 +63,47 @@ export default function Dashboard() {
   )
 
   const handleSaveProfile = async () => {
+    setProfileFeedback({ type: '', message: '' })
+
+    if (profileForm.phone && profileForm.phone.length !== 10) {
+      setProfileFeedback({ type: 'error', message: 'Mobile number must be 10 digits' })
+      return
+    }
+
     setSaving(true)
     try {
       await updateProfile(profileForm)
+      setProfileFeedback({ type: 'success', message: 'Profile updated successfully' })
       setEditing(false)
+    } catch (error) {
+      setProfileFeedback({
+        type: 'error',
+        message: error.response?.data?.message || 'Unable to update profile',
+      })
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleProfilePhoneChange = (event) => {
+    const phone = event.target.value.replace(/\D/g, '').slice(0, 10)
+    setProfileForm({ ...profileForm, phone })
+    setProfileFeedback({ type: '', message: '' })
+  }
+
+  const handleEditProfile = () => {
+    setProfileFeedback({ type: '', message: '' })
+    setEditing(true)
+  }
+
+  const handleCancelProfileEdit = () => {
+    setProfileForm({
+      name: user.name || '',
+      phone: user.phone || '',
+      institution: user.institution || '',
+    })
+    setProfileFeedback({ type: '', message: '' })
+    setEditing(false)
   }
 
   if (!user) return null
@@ -234,7 +269,7 @@ export default function Dashboard() {
               <div className="dash-profile-header">
                 <h2>Profile Information</h2>
                 {!editing && (
-                  <button className="btn btn-outline btn-sm" onClick={() => setEditing(true)}>
+                  <button className="btn btn-outline btn-sm" onClick={handleEditProfile}>
                     <FiEdit2 size={14} /> Edit
                   </button>
                 )}
@@ -248,21 +283,31 @@ export default function Dashboard() {
                   </div>
                   <div className="form-group">
                     <label>Phone</label>
-                    <input type="tel" value={profileForm.phone} onChange={(event) => setProfileForm({ ...profileForm, phone: event.target.value })} />
+                    <input
+                      type="tel"
+                      value={profileForm.phone}
+                      onChange={handleProfilePhoneChange}
+                      maxLength={10}
+                      pattern="[0-9]{10}"
+                      inputMode="numeric"
+                    />
                   </div>
                   <div className="form-group">
                     <label>Institution / Company</label>
                     <input type="text" value={profileForm.institution} onChange={(event) => setProfileForm({ ...profileForm, institution: event.target.value })} />
                   </div>
+                  {profileFeedback.type === 'error' && <p className="form-error">{profileFeedback.message}</p>}
+                  {profileFeedback.type === 'success' && <p className="form-success">{profileFeedback.message}</p>}
                   <div className="dash-profile-actions">
                     <button className="btn btn-primary btn-sm" onClick={handleSaveProfile} disabled={saving}>
                       {saving ? 'Saving...' : 'Save Changes'}
                     </button>
-                    <button className="btn btn-outline btn-sm" onClick={() => setEditing(false)}>Cancel</button>
+                    <button className="btn btn-outline btn-sm" onClick={handleCancelProfileEdit}>Cancel</button>
                   </div>
                 </div>
               ) : (
                 <div className="dash-profile-info">
+                  {profileFeedback.type === 'success' && <p className="form-success">{profileFeedback.message}</p>}
                   <div className="dash-profile-row">
                     <span className="dash-profile-label"><FiUser size={14} /> Name</span>
                     <span className="dash-profile-value">{user.name}</span>
