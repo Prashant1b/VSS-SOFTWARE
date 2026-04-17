@@ -71,8 +71,16 @@ export const updateUserRole = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    if (role === 'admin' && user.role !== 'admin') {
+      user.previousRoleBeforeAdmin = user.role;
+    }
+
+    if (user.role === 'admin' && role !== 'admin') {
+      user.previousRoleBeforeAdmin = undefined;
+    }
+
     user.role = role;
-    await user.save();
+    await user.save({ validateModifiedOnly: true });
 
     res.json({ success: true, message: 'User role updated', data: user.toJSON() });
   } catch (error) {
