@@ -18,7 +18,6 @@ router.post('/login', login);
 router.post('/login-otp', loginWithOtp);
 router.post('/logout', logout);
 
-// ================= PROFILE =================
 router.get('/me', protect, getProfile);
 router.put('/me', protect, UpdateProfile);
 router.post('/reset-password', resetPasswordWithOtp);

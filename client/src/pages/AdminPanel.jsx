@@ -4,7 +4,7 @@ import {
   FiHome, FiUsers, FiBookOpen, FiMessageSquare, FiBriefcase,
   FiBarChart2, FiStar, FiMail, FiFileText, FiArrowLeft,
   FiPlus, FiEdit2, FiTrash2, FiX, FiMenu, FiCheckCircle,
-  FiAlertCircle, FiLogOut,
+  FiAlertCircle, FiLogOut, FiShield,
 } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
@@ -200,7 +200,7 @@ export default function AdminPanel() {
           {activeSection === 'hiring' && <CrudSection endpoint="hiring-drives" fields={hiringFields} />}
           {activeSection === 'stats' && <CrudSection endpoint="stats" fields={statFields} />}
           {activeSection === 'partners' && <CrudSection endpoint="partners" fields={partnerFields} />}
-          {activeSection === 'users' && <ReadOnlySection endpoint="users" columns={userColumns} canDelete />}
+          {activeSection === 'users' && <UsersSection />}
           {activeSection === 'contacts' && <ReadOnlySection endpoint="contacts" columns={contactColumns} canDelete />}
           {activeSection === 'enrollments' && <ReadOnlySection endpoint="enrollments" columns={enrollmentColumns} canDelete />}
           {activeSection === 'recruitments' && <ReadOnlySection endpoint="recruitments" columns={recruitmentColumns} canDelete />}
@@ -262,7 +262,11 @@ function CrudSection({ endpoint, fields }) {
   }, [endpoint])
 
   useEffect(() => {
-    fetchData()
+    const timeoutId = window.setTimeout(() => {
+      fetchData()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
   }, [fetchData])
 
   const openAdd = () => {
@@ -431,7 +435,7 @@ function CrudSection({ endpoint, fields }) {
   )
 }
 
-function ReadOnlySection({ endpoint, columns, canDelete }) {
+function ReadOnlySection({ endpoint, columns, canDelete, renderActions }) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -444,7 +448,11 @@ function ReadOnlySection({ endpoint, columns, canDelete }) {
   }, [endpoint])
 
   useEffect(() => {
-    fetchData()
+    const timeoutId = window.setTimeout(() => {
+      fetchData()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
   }, [fetchData])
 
   const handleDelete = async (id) => {
@@ -475,7 +483,7 @@ function ReadOnlySection({ endpoint, columns, canDelete }) {
             <thead>
               <tr>
                 {columns.map((column) => <th key={column.key}>{column.label}</th>)}
-                {canDelete && <th>Actions</th>}
+                {(canDelete || renderActions) && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -486,11 +494,16 @@ function ReadOnlySection({ endpoint, columns, canDelete }) {
                       {column.render ? column.render(item[column.key]) : (item[column.key] ?? '-')}
                     </td>
                   ))}
-                  {canDelete && (
+                  {(canDelete || renderActions) && (
                     <td data-label="Actions">
-                      <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={() => handleDelete(item._id)}>
-                        <FiTrash2 size={12} />
-                      </button>
+                      <div className="actions">
+                        {renderActions ? renderActions(item, fetchData) : null}
+                        {canDelete ? (
+                          <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={() => handleDelete(item._id)}>
+                            <FiTrash2 size={12} />
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -500,5 +513,56 @@ function ReadOnlySection({ endpoint, columns, canDelete }) {
         </div>
       )}
     </div>
+  )
+}
+
+function UsersSection() {
+  const { user: currentUser } = useAuth()
+  const [updatingId, setUpdatingId] = useState(null)
+
+  const handleRoleToggle = async (user, refresh) => {
+    const nextRole = user.role === 'admin' ? 'student' : 'admin'
+    const actionLabel = nextRole === 'admin' ? 'make this user an admin' : 'remove admin access from this user'
+
+    if (!window.confirm(`Are you sure you want to ${actionLabel}?`)) return
+
+    setUpdatingId(user._id)
+    try {
+      await api.patch(`/admin/users/${user._id}/role`, { role: nextRole }, { withCredentials: true })
+      refresh()
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error updating user role')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  return (
+    <ReadOnlySection
+      endpoint="users"
+      columns={userColumns}
+      canDelete
+      renderActions={(item, refresh) => {
+        const isCurrentAdmin = currentUser?._id === item._id
+
+        return (
+          <button
+            className="btn-admin btn-admin-primary btn-admin-sm"
+            onClick={() => handleRoleToggle(item, refresh)}
+            disabled={updatingId === item._id || isCurrentAdmin}
+            title={item.role === 'admin' ? 'Remove admin access' : 'Make admin'}
+          >
+            <FiShield size={12} />
+            {isCurrentAdmin
+              ? 'Current Admin'
+              : updatingId === item._id
+                ? '...'
+                : item.role === 'admin'
+                  ? 'Remove Admin'
+                  : 'Make Admin'}
+          </button>
+        )
+      }}
+    />
   )
 }
