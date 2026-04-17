@@ -9,6 +9,7 @@ const OTP_EXPIRY_MS = 5 * 60 * 1000;
 
 // ================= UTIL =================
 const cleanEnv = (value) => String(value || '').trim().replace(/^"|"$/g, '');
+const normalizePhone = (phone) => String(phone || '').replace(/\D/g, '');
 
 const issueAuth = (res, user) => {
   const token = jwt.sign(
@@ -128,15 +129,26 @@ export const registerWithOtp = async (req, res) => {
     const { name, email, password, phone, role, institution, otp } = req.body;
 
     const cleanEmail = String(email).trim().toLowerCase();
+    const cleanPhone = normalizePhone(phone);
 
     if (!name || !cleanEmail || !password)
       return res.status(400).json({ message: 'Missing fields' });
+
+    if (!cleanPhone)
+      return res.status(400).json({ message: 'Mobile number is required' });
+
+    if (!/^\d{10}$/.test(cleanPhone))
+      return res.status(400).json({ message: 'Mobile number must be 10 digits' });
 
     if (!otp) return res.status(400).json({ message: 'OTP required' });
 
     const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser)
       return res.status(400).json({ message: 'User already exists' });
+
+    const existingPhone = await User.findOne({ phone: cleanPhone });
+    if (existingPhone)
+      return res.status(400).json({ message: 'Mobile number exists' });
 
     await verifyOtpFromDb(cleanEmail, 'signup', otp, true);
 
@@ -146,7 +158,7 @@ export const registerWithOtp = async (req, res) => {
       name,
       email: cleanEmail,
       password: hashed,
-      phone,
+      phone: cleanPhone,
       role: role || 'student',
       institution,
     });
@@ -157,6 +169,10 @@ export const registerWithOtp = async (req, res) => {
 
     res.status(201).json({ message: 'Registered', user: safeUser });
   } catch (err) {
+    if (err.code === 11000 && err.keyPattern?.phone) {
+      return res.status(400).json({ message: 'Mobile number exists' });
+    }
+
     res.status(400).json({ message: err.message });
   }
 };
@@ -291,12 +307,33 @@ export const UpdateProfile = async (req, res) => {
     const user = req.user;
 
     if (name) user.name = name;
-    if (phone) user.phone = phone;
+    if (phone !== undefined) {
+      const cleanPhone = normalizePhone(phone);
+
+      if (!cleanPhone) {
+        return res.status(400).json({ success: false, message: 'Mobile number is required' });
+      }
+
+      if (!/^\d{10}$/.test(cleanPhone)) {
+        return res.status(400).json({ success: false, message: 'Mobile number must be 10 digits' });
+      }
+
+      const existingPhone = await User.findOne({ phone: cleanPhone, _id: { $ne: user._id } });
+      if (existingPhone) {
+        return res.status(400).json({ success: false, message: 'Mobile number exists' });
+      }
+
+      user.phone = cleanPhone;
+    }
     if (institution) user.institution = institution;
 
     await user.save();
     res.json({ success: true, message: 'Profile updated', user: user.toJSON() });
   } catch (error) {
+    if (error.code === 11000 && error.keyPattern?.phone) {
+      return res.status(400).json({ success: false, message: 'Mobile number exists' });
+    }
+
     res.status(400).json({ success: false, message: error.message });
   }
 };

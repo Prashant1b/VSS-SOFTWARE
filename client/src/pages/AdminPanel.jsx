@@ -521,7 +521,7 @@ function UsersSection() {
   const [updatingId, setUpdatingId] = useState(null)
 
   const handleRoleToggle = async (user, refresh) => {
-    const nextRole = user.role === 'admin' ? 'student' : 'admin'
+    const nextRole = user.role === 'admin' ? (user.previousRoleBeforeAdmin || 'student') : 'admin'
     const actionLabel = nextRole === 'admin' ? 'make this user an admin' : 'remove admin access from this user'
 
     if (!window.confirm(`Are you sure you want to ${actionLabel}?`)) return
