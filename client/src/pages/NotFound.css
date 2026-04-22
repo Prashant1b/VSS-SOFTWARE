@@ -1,0 +1,63 @@
+.not-found-page {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  padding: 80px 0;
+  background: linear-gradient(180deg, #f4f8ff 0%, #ffffff 100%);
+}
+
+.not-found-card {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 44px;
+  text-align: center;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  box-shadow: var(--shadow-card);
+}
+
+.not-found-code {
+  display: inline-block;
+  margin-bottom: 16px;
+  font-size: 76px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--primary);
+  letter-spacing: -0.06em;
+}
+
+.not-found-card h1 {
+  margin-bottom: 12px;
+  font-size: 34px;
+  color: var(--text-primary);
+}
+
+.not-found-card p {
+  max-width: 520px;
+  margin: 0 auto 24px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.not-found-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .not-found-card {
+    padding: 28px 22px;
+  }
+
+  .not-found-code {
+    font-size: 56px;
+  }
+
+  .not-found-card h1 {
+    font-size: 28px;
+  }
+}

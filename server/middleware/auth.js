@@ -2,9 +2,6 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import redisClient from '../config/redis.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'vss_jwt_secret_key_change_in_production';
-
-
 export async function protect(req, res, next) {
   try {
     const token = req.cookies.token;
@@ -17,8 +14,13 @@ export async function protect(req, res, next) {
     const isBlocked = await redisClient.exists(`blocked_${token}`);
     const isBlockedLegacy = await redisClient.exists(`token:${token}`);
     if (isBlocked || isBlockedLegacy) throw new Error("Invalid token");
+    if (!payload.sid || user.activeSessionId !== payload.sid) {
+      throw new Error('Session expired. Please login again');
+    }
 
     req.user = user;
+    req.token = token;
+    req.tokenPayload = payload;
     next();
   } catch (err) {
     res.status(401).json({ message: err.message });

@@ -44,9 +44,10 @@ export default function Footer() {
             <h4>Company</h4>
             <ul>
               <li><Link to="/about">About Us</Link></li>
+              <li><Link to="/team">Our Team</Link></li>
               <li><Link to="/resources">Success Stories</Link></li>
-              <li><Link to="/about">Careers</Link></li>
-              <li><Link to="/about">Privacy Policy</Link></li>
+              <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+              <li><Link to="/terms-of-service">Terms of Service</Link></li>
             </ul>
           </div>
 
@@ -76,8 +77,8 @@ export default function Footer() {
         <div className="footer-bottom">
           <p>&copy; 2026 VATE Software Systems Pvt. Ltd. All Rights Reserved.</p>
           <div className="footer-bottom-links">
-            <Link to="/about">Privacy Policy</Link>
-            <Link to="/about">Terms of Service</Link>
+            <Link to="/privacy-policy">Privacy Policy</Link>
+            <Link to="/terms-of-service">Terms of Service</Link>
           </div>
         </div>
       </div>

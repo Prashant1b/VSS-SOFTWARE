@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   FiArrowRight,
@@ -6,13 +6,14 @@ import {
   FiBookOpen,
   FiCalendar,
   FiCheck,
+  FiClock,
   FiChevronDown,
   FiChevronUp,
-  FiClock,
   FiCloud,
   FiCode,
   FiCpu,
   FiDatabase,
+  FiFileText,
   FiGitBranch,
   FiLayers,
   FiPlayCircle,
@@ -87,19 +88,26 @@ function formatCurrency(amount, fallback) {
 
 function normalizeCourse(course) {
   const preset = courseVisuals[course.slug] || courseVisuals.default
-  const dbFeatures = Array.isArray(course.features) && course.features.length ? course.features : null
-  const dbTechStack = Array.isArray(course.techStack) && course.techStack.length ? course.techStack : null
-  const legacyHighlights = Array.isArray(course.highlights) && course.highlights.length ? course.highlights : null
+  const dbFeatures = Array.isArray(course.features) && course.features.length ? course.features : []
+  const dbTechStack = Array.isArray(course.techStack) && course.techStack.length ? course.techStack : []
+  const legacyHighlights = Array.isArray(course.highlights) && course.highlights.length ? course.highlights : []
+  const fallbackNextBatch = course.isActive ? 'Admissions Open' : 'Coming Soon'
 
   return {
     ...course,
     icon: preset.icon,
-    mode: course.mode || preset.mode,
-    originalPrice: course.originalPrice || preset.originalPrice,
-    features: dbFeatures || legacyHighlights || preset.features,
-    tech: dbTechStack || legacyHighlights?.slice(0, 6) || preset.tech,
+    categoryLabel: course.categoryLabel || course.title,
+    cardHeadline: course.cardHeadline || 'Course',
+    mode: course.mode || 'Online / Offline',
+    originalPrice: course.originalPrice || '',
+    durationLabel: course.durationLabel || course.duration,
+    projects: course.projectsCount || String(dbFeatures.length || legacyHighlights.length || 0),
+    nextBatch: course.nextBatchLabel || fallbackNextBatch,
+    accent: course.accentTone || 'violet',
+    features: dbFeatures.length ? dbFeatures : legacyHighlights,
+    tech: dbTechStack.length ? dbTechStack : legacyHighlights.slice(0, 6),
     displayPrice: course.price || formatCurrency(course.amount),
-    displayOriginalPrice: course.originalPrice || preset.originalPrice,
+    displayOriginalPrice: course.originalPrice || '',
   }
 }
 
@@ -116,6 +124,7 @@ export default function EdTech() {
   const [actionLoading, setActionLoading] = useState('')
   const [feedback, setFeedback] = useState({ type: '', message: '' })
   const [demoForm, setDemoForm] = useState({ slotDate: '', slotTime: demoTimeSlots[0], notes: '' })
+  const detailRef = useRef(null)
 
   useEffect(() => {
     setCoursesLoading(true)
@@ -167,6 +176,13 @@ export default function EdTech() {
   }, [activeCourseTab])
 
   const minDate = new Date().toISOString().split('T')[0]
+
+  const handleSelectCourse = (slug) => {
+    setActiveCourseTab(slug)
+    window.requestAnimationFrame(() => {
+      detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 
   const requireLogin = () => navigate('/login')
 
@@ -340,23 +356,58 @@ export default function EdTech() {
 
           </div>
 
-          <div className="course-tabs">
+          <div className="course-showcase-grid">
             {courses.map((course) => {
               const Icon = course.icon || FiBookOpen
               return (
                 <button
                   key={course.slug}
-                  className={`course-tab ${activeCourse.slug === course.slug ? 'active' : ''}`}
-                  onClick={() => setActiveCourseTab(course.slug)}
+                  className={`course-showcase-card course-accent-${course.accent} ${activeCourse.slug === course.slug ? 'active' : ''}`}
+                  onClick={() => handleSelectCourse(course.slug)}
                 >
-                  <Icon size={28} />
-                  <span>{course.title}</span>
+                  <div className="course-showcase-head">
+                    <div className="course-showcase-icon"><Icon size={24} /></div>
+                    <span className="course-showcase-duration"><FiClock size={13} /> {course.durationLabel}</span>
+                  </div>
+
+                  <div className="course-showcase-body">
+                    <span className="course-showcase-label">{course.categoryLabel}</span>
+                    <h3>{course.cardHeadline}</h3>
+                    <p>Tech Stack</p>
+                    <div className="course-showcase-tags">
+                      {(course.tech.length ? course.tech : ['Mentor Support', 'Live Projects']).slice(0, 7).map((item, index) => (
+                        <span key={`${item}-${index}`}>{item}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="course-showcase-stats">
+                    <div>
+                      <FiFileText size={16} />
+                      <strong>Project</strong>
+                      <span>{course.projects}</span>
+                    </div>
+                    <div>
+                      <FiUsers size={16} />
+                      <strong>Enrolled</strong>
+                      <span>{course.students || '500+ Students'}</span>
+                    </div>
+                    <div>
+                      <FiCalendar size={16} />
+                      <strong>Next Batch</strong>
+                      <span>{course.nextBatch}</span>
+                    </div>
+                  </div>
+
+                  <span className="course-showcase-cta">
+                    View Program
+                  </span>
                 </button>
               )
             })}
           </div>
 
-          <div className="course-detail-card">
+          <div className="course-detail-card" ref={detailRef}>
             <div className="course-detail-left">
               <div className="course-detail-icon"><CourseIcon size={28} /></div>
               <h3>{activeCourse.title}</h3>
@@ -388,8 +439,8 @@ export default function EdTech() {
               </div>
 
               {courseState.enrolled ? (
-                <Link to="/dashboard" className="btn btn-primary">
-                  Open Dashboard <FiArrowRight size={16} />
+                <Link to={`/my-learning/${activeCourse.slug}`} className="btn btn-primary">
+                  Open Classroom <FiArrowRight size={16} />
                 </Link>
               ) : (
                 <a href="#enroll" className="btn btn-primary">
@@ -404,20 +455,28 @@ export default function EdTech() {
                   <div className="course-access-card">
                     <span className="course-access-badge">Enrolled</span>
                     <h4>Your access is active</h4>
-                    <p>This course is already unlocked for your account. Payment, dashboard visibility, and access state are all synced.</p>
+                    <p>This course is already unlocked for your account. Ab aap directly classroom open kar sakte hain.</p>
                     <div className="course-access-meta">
                       <span><FiAward size={14} /> Paid enrollment confirmed</span>
                       {courseState.enrollment?.paidAt && (
                         <span><FiClock size={14} /> {new Date(courseState.enrollment.paidAt).toLocaleDateString('en-IN')}</span>
                       )}
                     </div>
+                    {!courseState.enrollment?.batchId && (
+                      <div className="course-scheduled-note">
+                        <strong>Batch pending:</strong> Payment is complete, but an admin still needs to assign your enrollment to the correct batch from <code>Admin Panel -&gt; Enrollments</code>.
+                      </div>
+                    )}
                     {courseState.enrollment?.demoVideoUrl && (
                       <a className="btn btn-primary" href={courseState.enrollment.demoVideoUrl} target="_blank" rel="noreferrer" style={{ width: '100%', justifyContent: 'center' }}>
                         <FiPlayCircle size={16} /> Watch Demo Video
                       </a>
                     )}
+                    <Link to={`/my-learning/${activeCourse.slug}`} className="btn btn-outline" style={{ width: '100%', justifyContent: 'center' }}>
+                      Open My Classroom
+                    </Link>
                     <Link to="/dashboard" className="btn btn-outline" style={{ width: '100%', justifyContent: 'center' }}>
-                      View My Courses
+                      View My Dashboard
                     </Link>
                   </div>
                 ) : (
@@ -584,7 +643,7 @@ export default function EdTech() {
               </h2>
               <p>
                 {courseState.enrolled
-                  ? 'Your seat is confirmed. The dashboard shows the course as enrolled, and the payment and demo actions are hidden here.'
+                  ? 'Your seat is confirmed. You can open the classroom directly, and if batch assignment is still pending, an admin must map your enrollment to the correct batch.'
                   : 'Pick a live demo slot first, or complete payment with Razorpay right away. Once payment succeeds, your course appears in the profile dashboard automatically.'}
               </p>
               <ul className="enrollment-benefits">
@@ -607,7 +666,7 @@ export default function EdTech() {
                 <div className="enrolled-summary-card">
                   <span className="course-access-badge">Paid</span>
                   <h3>{activeCourse.title}</h3>
-                  <p>Your course is already mapped to your profile. Continue from your dashboard whenever you want.</p>
+                  <p>Your course is already mapped to your profile. You can open the classroom directly. If batch assignment is still pending, an admin needs to update the enrollment record.</p>
                   <div className="enrolled-summary-grid">
                     <div>
                       <span>Status</span>
@@ -627,6 +686,9 @@ export default function EdTech() {
                       <FiPlayCircle size={16} /> Open Demo Video
                     </a>
                   )}
+                  <Link to={`/my-learning/${activeCourse.slug}`} className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', marginTop: 12 }}>
+                    Open Classroom
+                  </Link>
                 </div>
               </div>
             ) : (

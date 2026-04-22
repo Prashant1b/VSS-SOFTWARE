@@ -193,6 +193,12 @@
   font-weight: 600;
 }
 
+.admin-helper-text {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
 .admin-table-scroll {
   width: 100%;
   overflow-x: auto;
@@ -380,6 +386,26 @@
 .admin-badge-employer {
   background: #FEF3C7;
   color: #D97706;
+}
+
+.admin-badge-teacher {
+  background: #E0F2FE;
+  color: #0284C7;
+}
+
+.admin-inline-select {
+  min-width: 140px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.actions-stack {
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .admin-empty {
