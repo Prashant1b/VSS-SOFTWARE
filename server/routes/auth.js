@@ -8,7 +8,8 @@ import {
   logout,
   getProfile,
   resetPasswordWithOtp,
-  UpdateProfile
+  UpdateProfile,
+  changePassword,
 } from "../Controller/userAuthent.js"
 
 const router = express.Router();
@@ -20,6 +21,7 @@ router.post('/logout', protect, logout);
 
 router.get('/me', protect, getProfile);
 router.put('/me', protect, UpdateProfile);
+router.put('/change-password', protect, changePassword);
 router.post('/reset-password', resetPasswordWithOtp);
 
 export default router;

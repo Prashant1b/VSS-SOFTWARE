@@ -295,12 +295,21 @@ export const getProfile = async (req, res) => {
 
 export const resetPasswordWithOtp = async (req, res) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const { email, otp, newPassword, confirmPassword } = req.body;
+    const cleanEmail = String(email || '').trim().toLowerCase();
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    await verifyOtpFromDb(email, 'reset', otp, true);
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: 'New password and confirm password must match' });
+    }
+
+    await verifyOtpFromDb(cleanEmail, 'reset', otp, true);
 
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
@@ -308,6 +317,46 @@ export const resetPasswordWithOtp = async (req, res) => {
     res.json({ message: 'Password reset successful' });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({ success: false, message: 'All password fields are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ success: false, message: 'New password and confirm password must match' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({ success: false, message: 'New password must be different from current password' });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
