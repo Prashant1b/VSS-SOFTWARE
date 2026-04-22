@@ -166,7 +166,21 @@
   transition: var(--transition);
 }
 
+.auth-footer-button {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
 .auth-footer a:hover {
+  color: var(--primary-dark);
+}
+
+.auth-footer-button:hover {
   color: var(--primary-dark);
 }
 
