@@ -295,7 +295,10 @@ function CrudSection({ endpoint, fields }) {
   const openEdit = (item) => {
     const formData = {}
     fields.forEach((field) => {
-      formData[field.key] = item[field.key] ?? ''
+      const value = item[field.key]
+      formData[field.key] = field.type === 'textarea' && Array.isArray(value)
+        ? value.join('\n')
+        : (value ?? '')
     })
     setForm(formData)
     setEditing(item._id)
@@ -329,7 +332,22 @@ function CrudSection({ endpoint, fields }) {
     }
   }
 
-  const displayColumns = fields.filter((field) => field.type !== 'textarea' && field.key !== 'order')
+  const displayColumns = endpoint === 'courses'
+    ? [
+        { key: 'title', label: 'Course Title' },
+        { key: 'slug', label: 'Slug' },
+        { key: 'duration', label: 'Duration' },
+        { key: 'projectsCount', label: 'Projects' },
+        {
+          key: 'techStack',
+          label: 'Tech Stack',
+          render: (value) => Array.isArray(value) ? value.join(', ') : String(value || ''),
+        },
+        { key: 'price', label: 'Price' },
+        { key: 'students', label: 'Students Count' },
+        { key: 'isActive', label: 'Active', type: 'checkbox' },
+      ]
+    : fields.filter((field) => field.type !== 'textarea' && field.key !== 'order')
 
   if (loading) return <div className="admin-loading"><span className="spinner" /></div>
 
@@ -366,7 +384,7 @@ function CrudSection({ endpoint, fields }) {
                           <span className={`admin-badge ${item[field.key] ? 'admin-badge-active' : 'admin-badge-inactive'}`}>
                             {item[field.key] ? 'Active' : 'Inactive'}
                           </span>
-                        ) : String(item[field.key] ?? '')}
+                        ) : field.render ? field.render(item[field.key], item) : String(item[field.key] ?? '')}
                       </td>
                     ))}
                     <td data-label="Actions">
