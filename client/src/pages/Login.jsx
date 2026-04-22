@@ -96,62 +96,61 @@ export default function Login() {
             <div className="auth-logo">
               <BrandLogo variant="default" to="/" />
             </div>
-            <h1>Welcome back</h1>
-            <p>Sign in to your VSS account</p>
+            <h1>{showForgotPassword ? 'Reset Password' : 'Welcome back'}</h1>
+            <p>{showForgotPassword ? 'Verify your email and update your password' : 'Sign in to your VSS account'}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="auth-form">
-            <div className="form-group">
-              <label>Email Address</label>
-              <div className="input-icon-wrapper">
-                <FiMail size={16} className="input-icon" />
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  required
-                />
+          {!showForgotPassword ? (
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="form-group">
+                <label>Email Address</label>
+                <div className="input-icon-wrapper">
+                  <FiMail size={16} className="input-icon" />
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={form.email}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    required
+                  />
+                </div>
               </div>
-            </div>
-            <div className="form-group">
-              <label>Password</label>
-              <div className="input-icon-wrapper">
-                <FiLock size={16} className="input-icon" />
-                <input
-                  type="password"
-                  placeholder="Enter your password"
-                  value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  required
-                  minLength={6}
-                />
+              <div className="form-group">
+                <label>Password</label>
+                <div className="input-icon-wrapper">
+                  <FiLock size={16} className="input-icon" />
+                  <input
+                    type="password"
+                    placeholder="Enter your password"
+                    value={form.password}
+                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    required
+                    minLength={6}
+                  />
+                </div>
               </div>
-            </div>
 
-            <button
-              type="button"
-              className="auth-inline-link"
-              onClick={() => {
-                setShowForgotPassword((value) => !value)
-                setError('')
-                setSuccess('')
-              }}
-            >
-              {showForgotPassword ? 'Hide forgot password' : 'Forgot password?'}
-            </button>
+              <button
+                type="button"
+                className="auth-inline-link"
+                onClick={() => {
+                  setShowForgotPassword(true)
+                  setError('')
+                  setSuccess('')
+                }}
+              >
+                Forgot password?
+              </button>
 
-            {error && <div className="auth-error">{error}</div>}
-            {success && <div className="auth-success">{success}</div>}
+              {error && <div className="auth-error">{error}</div>}
+              {success && <div className="auth-success">{success}</div>}
 
-            <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
-              {loading ? <><span className="spinner" /> Signing in...</> : <>Sign In <FiArrowRight size={16} /></>}
-            </button>
-          </form>
-
-          {showForgotPassword && (
+              <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
+                {loading ? <><span className="spinner" /> Signing in...</> : <>Sign In <FiArrowRight size={16} /></>}
+              </button>
+            </form>
+          ) : (
             <form className="auth-form auth-reset-box" onSubmit={handleResetPassword}>
-              <h3>Reset Password</h3>
               <p className="auth-reset-copy">Enter your email, verify the OTP, then set a new password.</p>
 
               <div className="form-group">
@@ -223,11 +222,31 @@ export default function Login() {
                   </button>
                 </>
               )}
+
+              {error && <div className="auth-error">{error}</div>}
+              {success && <div className="auth-success">{success}</div>}
+
+              <button
+                type="button"
+                className="auth-inline-link"
+                onClick={() => {
+                  setShowForgotPassword(false)
+                  setError('')
+                  setSuccess('')
+                  setResetOtpSent(false)
+                }}
+              >
+                Back to login
+              </button>
             </form>
           )}
 
           <div className="auth-footer">
-            <p>Don't have an account? <Link to="/signup">Create Account</Link></p>
+            {!showForgotPassword ? (
+              <p>Don't have an account? <Link to="/signup">Create Account</Link></p>
+            ) : (
+              <p>Remembered your password? <button type="button" className="auth-footer-button" onClick={() => setShowForgotPassword(false)}>Sign In</button></p>
+            )}
           </div>
         </div>
 
