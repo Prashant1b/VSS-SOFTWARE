@@ -16,7 +16,7 @@ router.post('/send-otp', sendOtp);
 router.post('/register', registerWithOtp);
 router.post('/login', login);
 router.post('/login-otp', loginWithOtp);
-router.post('/logout', logout);
+router.post('/logout', protect, logout);
 
 router.get('/me', protect, getProfile);
 router.put('/me', protect, UpdateProfile);

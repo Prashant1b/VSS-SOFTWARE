@@ -236,6 +236,9 @@ export default function About() {
                   <span key={i} className="leader-area-chip">{a}</span>
                 ))}
               </div>
+              <div style={{ marginTop: 20 }}>
+                <Link to="/team" className="btn btn-outline">Meet Full Team</Link>
+              </div>
             </div>
           </div>
         </div>

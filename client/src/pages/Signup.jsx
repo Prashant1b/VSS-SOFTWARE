@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { FiUser, FiMail, FiLock, FiPhone, FiArrowRight } from 'react-icons/fi'
 import api from "../api.js"
+import { useAuth } from '../context/AuthContext'
 import BrandLogo from '../components/BrandLogo'
 import './Auth.css'
 
@@ -11,7 +12,6 @@ export default function Signup() {
     email: '',
     password: '',
     phone: '',
-    role: 'student',
     otp: ''
   })
 
@@ -22,6 +22,7 @@ export default function Signup() {
   const [otpLoading, setOtpLoading] = useState(false)
 
   const navigate = useNavigate()
+  const { register } = useAuth()
 
   const handlePhoneChange = (event) => {
     const phone = event.target.value.replace(/\D/g, '').slice(0, 10)
@@ -63,7 +64,7 @@ export default function Signup() {
     }
 
     try {
-      await api.post('/auth/register', form)
+      const data = await register(form)
       navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed')
@@ -186,16 +187,8 @@ export default function Signup() {
               </div>
             </div>
 
-            {/* ROLE */}
-            <div className="form-group">
-              <label>I am a...</label>
-              <select
-                value={form.role}
-                onChange={e => setForm({ ...form, role: e.target.value })}
-              >
-                <option value="student">Student / Learner</option>
-                <option value="employer">Employer / Recruiter</option>
-              </select>
+            <div className="auth-info-box">
+              New signups are created as <strong>Student</strong>. If you need an <strong>Employer</strong> or <strong>Teacher</strong> account, an admin can change your role later.
             </div>
 
             {/* ERROR */}

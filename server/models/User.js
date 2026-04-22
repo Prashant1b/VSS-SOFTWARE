@@ -6,10 +6,11 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true, minlength: 6 },
   phone: { type: String, required: true, trim: true, match: [/^\d{10}$/, 'Mobile number must be 10 digits'] },
-  role: { type: String, enum: ['student', 'employer', 'admin'], default: 'student' },
-  previousRoleBeforeAdmin: { type: String, enum: ['student', 'employer'] },
+  role: { type: String, enum: ['student', 'employer', 'teacher', 'admin'], default: 'student' },
+  previousRoleBeforeAdmin: { type: String, enum: ['student', 'employer', 'teacher'] },
   institution: { type: String },
   enrolledCourses: [{ type: String }],
+  activeSessionId: { type: String, default: null },
   createdAt: { type: Date, default: Date.now },
 });
 
