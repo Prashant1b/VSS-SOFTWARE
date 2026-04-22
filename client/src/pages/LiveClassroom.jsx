@@ -231,6 +231,10 @@ export default function LiveClassroom() {
   const participants = useMemo(() => collectParticipants(room, isConnected), [room, isConnected, version])
   const selfParticipant = useMemo(() => participants.find((participant) => participant.isLocal) || null, [participants])
   const remoteParticipants = useMemo(() => participants.filter((participant) => !participant.isLocal), [participants])
+  const presenterParticipants = useMemo(
+    () => participants.filter((participant) => participant.screenTrack || participant.cameraTrack || participant.videoTracks.length > 0),
+    [participants]
+  )
 
   const remoteAudioTracks = useMemo(
     () => remoteParticipants.flatMap((participant) => participant.audioTracks.map((track) => ({ key: `${participant.sid}-${track.sid}`, track }))),
@@ -347,8 +351,13 @@ export default function LiveClassroom() {
 
   const isPresentationMode = !!activeScreenShare
   const hasRemoteParticipants = remoteParticipants.length > 0
-  const visibleParticipants = isPresentationMode ? participants : (hasRemoteParticipants ? participants : (selfParticipant ? [selfParticipant] : []))
-  const showWaitingNotice = hasJoinedRoom && !hasRemoteParticipants
+  const isStudentView = !info?.livekit?.canPublish
+  const visibleParticipants = isStudentView
+    ? presenterParticipants
+    : (isPresentationMode ? participants : (hasRemoteParticipants ? participants : (selfParticipant ? [selfParticipant] : [])))
+  const showWaitingNotice = isStudentView
+    ? hasJoinedRoom && visibleParticipants.length === 0
+    : hasJoinedRoom && !hasRemoteParticipants
 
   return (
     <div className="live-classroom-page page-enter">
@@ -391,7 +400,7 @@ export default function LiveClassroom() {
           <div className="live-classroom-main">
             <div className="live-classroom-panel">
               <div className="live-panel-head">
-                <span><FiUsers size={14} /> {remoteParticipants.length} Remote Participants</span>
+                <span><FiUsers size={14} /> {isStudentView ? visibleParticipants.length : remoteParticipants.length} Remote Participants</span>
                 <span><FiMessageSquare size={14} /> Private batch room</span>
                 <span>{isConnected ? 'Connected' : 'Connecting'}</span>
                 {isPresentationMode && (
@@ -399,10 +408,15 @@ export default function LiveClassroom() {
                     <FiMonitor size={13} /> {activeScreenShare.isLocal ? 'You are presenting' : `${activeScreenShare.name} is presenting`}
                   </span>
                 )}
+                {isStudentView && (
+                  <span className="live-student-mode-badge">Students can only watch and listen</span>
+                )}
               </div>
               {showWaitingNotice && (
                 <p className="live-panel-note">
-                  You are alone in the room right now. Your preview and controls stay active so you can test camera, mic, and screen share before others join.
+                  {isStudentView
+                    ? 'Teacher stream abhi live nahi dikh raha. Jaise hi teacher camera ya screen share start karega, yahan class stream appear ho jayegi.'
+                    : 'You are alone in the room right now. Your preview and controls stay active so you can test camera, mic, and screen share before others join.'}
                 </p>
               )}
             </div>
