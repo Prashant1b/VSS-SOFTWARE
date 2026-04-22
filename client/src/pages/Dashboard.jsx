@@ -37,7 +37,10 @@ export default function Dashboard() {
   const [editing, setEditing] = useState(false)
   const [profileForm, setProfileForm] = useState({ name: '', phone: '', institution: '' })
   const [profileFeedback, setProfileFeedback] = useState({ type: '', message: '' })
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [passwordFeedback, setPasswordFeedback] = useState({ type: '', message: '' })
   const [saving, setSaving] = useState(false)
+  const [passwordSaving, setPasswordSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [enrollments, setEnrollments] = useState([])
   const [loadingEnrollments, setLoadingEnrollments] = useState(true)
@@ -177,6 +180,35 @@ export default function Dashboard() {
       setJobFeedback({ type: 'error', message: error.response?.data?.message || 'Unable to post requirement right now.' })
     } finally {
       setPostingJob(false)
+    }
+  }
+
+  const handleChangePassword = async (event) => {
+    event.preventDefault()
+    setPasswordFeedback({ type: '', message: '' })
+
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordFeedback({ type: 'error', message: 'New password must be at least 6 characters' })
+      return
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordFeedback({ type: 'error', message: 'New password and confirm password must match' })
+      return
+    }
+
+    setPasswordSaving(true)
+    try {
+      const res = await api.put('/auth/change-password', passwordForm, { withCredentials: true })
+      setPasswordFeedback({ type: 'success', message: res.data.message || 'Password updated successfully' })
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (error) {
+      setPasswordFeedback({
+        type: 'error',
+        message: error.response?.data?.message || 'Unable to update password',
+      })
+    } finally {
+      setPasswordSaving(false)
     }
   }
 
@@ -447,71 +479,117 @@ export default function Dashboard() {
 
         {activeTab === 'profile' && (
           <div className="dash-content">
-            <div className="dash-profile-card">
-              <div className="dash-profile-header">
-                <h2>Profile Information</h2>
-                {!editing && (
-                  <button className="btn btn-outline btn-sm" onClick={handleEditProfile}>
-                    <FiEdit2 size={14} /> Edit
-                  </button>
+            <div className="dash-jobs-grid">
+              <div className="dash-profile-card">
+                <div className="dash-profile-header">
+                  <h2>Profile Information</h2>
+                  {!editing && (
+                    <button className="btn btn-outline btn-sm" onClick={handleEditProfile}>
+                      <FiEdit2 size={14} /> Edit
+                    </button>
+                  )}
+                </div>
+
+                {editing ? (
+                  <div className="dash-profile-form">
+                    <div className="form-group">
+                      <label>Full Name</label>
+                      <input type="text" value={profileForm.name} onChange={(event) => setProfileForm({ ...profileForm, name: event.target.value })} />
+                    </div>
+                    <div className="form-group">
+                      <label>Phone</label>
+                      <input
+                        type="tel"
+                        value={profileForm.phone}
+                        onChange={handleProfilePhoneChange}
+                        maxLength={10}
+                        pattern="[0-9]{10}"
+                        inputMode="numeric"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Institution / Company</label>
+                      <input type="text" value={profileForm.institution} onChange={(event) => setProfileForm({ ...profileForm, institution: event.target.value })} />
+                    </div>
+                    {profileFeedback.type === 'error' && <p className="form-error">{profileFeedback.message}</p>}
+                    {profileFeedback.type === 'success' && <p className="form-success">{profileFeedback.message}</p>}
+                    <div className="dash-profile-actions">
+                      <button className="btn btn-primary btn-sm" onClick={handleSaveProfile} disabled={saving}>
+                        {saving ? 'Saving...' : 'Save Changes'}
+                      </button>
+                      <button className="btn btn-outline btn-sm" onClick={handleCancelProfileEdit}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="dash-profile-info">
+                    {profileFeedback.type === 'success' && <p className="form-success">{profileFeedback.message}</p>}
+                    <div className="dash-profile-row">
+                      <span className="dash-profile-label"><FiUser size={14} /> Name</span>
+                      <span className="dash-profile-value">{user.name}</span>
+                    </div>
+                    <div className="dash-profile-row">
+                      <span className="dash-profile-label"><FiMail size={14} /> Email</span>
+                      <span className="dash-profile-value">{user.email}</span>
+                    </div>
+                    <div className="dash-profile-row">
+                      <span className="dash-profile-label"><FiPhone size={14} /> Phone</span>
+                      <span className="dash-profile-value">{user.phone || 'Not provided'}</span>
+                    </div>
+                    <div className="dash-profile-row">
+                      <span className="dash-profile-label"><FiSettings size={14} /> Role</span>
+                      <span className="dash-profile-value" style={{ textTransform: 'capitalize' }}>{user.role}</span>
+                    </div>
+                    <div className="dash-profile-row">
+                      <span className="dash-profile-label"><FiBook size={14} /> Institution</span>
+                      <span className="dash-profile-value">{user.institution || 'Not provided'}</span>
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {editing ? (
-                <div className="dash-profile-form">
+              <div className="dash-profile-card">
+                <div className="dash-profile-header">
+                  <h2>Change Password</h2>
+                </div>
+                <form className="dash-profile-form dash-job-form" onSubmit={handleChangePassword}>
                   <div className="form-group">
-                    <label>Full Name</label>
-                    <input type="text" value={profileForm.name} onChange={(event) => setProfileForm({ ...profileForm, name: event.target.value })} />
-                  </div>
-                  <div className="form-group">
-                    <label>Phone</label>
+                    <label>Current Password</label>
                     <input
-                      type="tel"
-                      value={profileForm.phone}
-                      onChange={handleProfilePhoneChange}
-                      maxLength={10}
-                      pattern="[0-9]{10}"
-                      inputMode="numeric"
+                      type="password"
+                      value={passwordForm.currentPassword}
+                      onChange={(event) => setPasswordForm({ ...passwordForm, currentPassword: event.target.value })}
+                      required
                     />
                   </div>
                   <div className="form-group">
-                    <label>Institution / Company</label>
-                    <input type="text" value={profileForm.institution} onChange={(event) => setProfileForm({ ...profileForm, institution: event.target.value })} />
+                    <label>New Password</label>
+                    <input
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={(event) => setPasswordForm({ ...passwordForm, newPassword: event.target.value })}
+                      minLength={6}
+                      required
+                    />
                   </div>
-                  {profileFeedback.type === 'error' && <p className="form-error">{profileFeedback.message}</p>}
-                  {profileFeedback.type === 'success' && <p className="form-success">{profileFeedback.message}</p>}
+                  <div className="form-group">
+                    <label>Confirm New Password</label>
+                    <input
+                      type="password"
+                      value={passwordForm.confirmPassword}
+                      onChange={(event) => setPasswordForm({ ...passwordForm, confirmPassword: event.target.value })}
+                      minLength={6}
+                      required
+                    />
+                  </div>
+                  {passwordFeedback.type === 'error' && <p className="form-error">{passwordFeedback.message}</p>}
+                  {passwordFeedback.type === 'success' && <p className="form-success">{passwordFeedback.message}</p>}
                   <div className="dash-profile-actions">
-                    <button className="btn btn-primary btn-sm" onClick={handleSaveProfile} disabled={saving}>
-                      {saving ? 'Saving...' : 'Save Changes'}
+                    <button className="btn btn-primary btn-sm" type="submit" disabled={passwordSaving}>
+                      {passwordSaving ? 'Updating...' : 'Update Password'}
                     </button>
-                    <button className="btn btn-outline btn-sm" onClick={handleCancelProfileEdit}>Cancel</button>
                   </div>
-                </div>
-              ) : (
-                <div className="dash-profile-info">
-                  {profileFeedback.type === 'success' && <p className="form-success">{profileFeedback.message}</p>}
-                  <div className="dash-profile-row">
-                    <span className="dash-profile-label"><FiUser size={14} /> Name</span>
-                    <span className="dash-profile-value">{user.name}</span>
-                  </div>
-                  <div className="dash-profile-row">
-                    <span className="dash-profile-label"><FiMail size={14} /> Email</span>
-                    <span className="dash-profile-value">{user.email}</span>
-                  </div>
-                  <div className="dash-profile-row">
-                    <span className="dash-profile-label"><FiPhone size={14} /> Phone</span>
-                    <span className="dash-profile-value">{user.phone || 'Not provided'}</span>
-                  </div>
-                  <div className="dash-profile-row">
-                    <span className="dash-profile-label"><FiSettings size={14} /> Role</span>
-                    <span className="dash-profile-value" style={{ textTransform: 'capitalize' }}>{user.role}</span>
-                  </div>
-                  <div className="dash-profile-row">
-                    <span className="dash-profile-label"><FiBook size={14} /> Institution</span>
-                    <span className="dash-profile-value">{user.institution || 'Not provided'}</span>
-                  </div>
-                </div>
-              )}
+                </form>
+              </div>
             </div>
           </div>
         )}
