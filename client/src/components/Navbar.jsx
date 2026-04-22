@@ -12,6 +12,7 @@ const navLinks = [
   { path: '/staffing', label: 'Staffing' },
   { path: '/ai-solutions', label: 'AI Solutions' },
   { path: '/about', label: 'About' },
+  { path: '/team', label: 'Team' },
   { path: '/resources', label: 'Resources' },
 ]
 
@@ -21,6 +22,12 @@ export default function Navbar() {
   const [showCallback, setShowCallback] = useState(false)
   const location = useLocation()
   const { user, logout } = useAuth()
+
+  const accountPath = user?.role === 'admin'
+    ? '/admin'
+    : user?.role === 'teacher'
+      ? '/teacher'
+      : '/dashboard'
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -72,8 +79,13 @@ export default function Navbar() {
                       <FiSettings size={16} /> Admin Panel
                     </Link>
                   )}
-                  <Link to="/dashboard" className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', marginBottom: 8 }}>
-                    <FiUser size={16} /> Dashboard
+                  {user.role === 'teacher' && (
+                    <Link to="/teacher" className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', marginBottom: 8 }}>
+                      <FiSettings size={16} /> Teacher Panel
+                    </Link>
+                  )}
+                  <Link to={accountPath} className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', marginBottom: 8 }}>
+                    <FiUser size={16} /> {user.role === 'teacher' ? 'Teacher Home' : 'Dashboard'}
                   </Link>
                   <button className="btn btn-outline" onClick={logout} style={{ width: '100%', justifyContent: 'center' }}>
                     <FiLogOut size={16} /> Sign Out
@@ -103,7 +115,7 @@ export default function Navbar() {
                     <FiSettings size={14} /> Admin
                   </Link>
                 )}
-                <Link to="/dashboard" className="nav-avatar-btn" title="Dashboard">
+                <Link to={accountPath} className="nav-avatar-btn" title="Open account">
                   {user.name.charAt(0).toUpperCase()}
                 </Link>
               </>

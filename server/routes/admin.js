@@ -33,9 +33,14 @@ import {
   getContacts,
   deleteContact,
   getEnrollments,
+  updateEnrollment,
   deleteEnrollment,
   getRecruitments,
   deleteRecruitment,
+  getBatches,
+  createBatch,
+  updateBatch,
+  deleteBatch,
 } from '../Controller/adminController.js';
 
 const router = express.Router();
@@ -78,10 +83,16 @@ router.post('/partners', createPartner);
 router.put('/partners/:id', updatePartner);
 router.delete('/partners/:id', deletePartner);
 
+router.get('/batches', getBatches);
+router.post('/batches', createBatch);
+router.put('/batches/:id', updateBatch);
+router.delete('/batches/:id', deleteBatch);
+
 router.get('/contacts', getContacts);
 router.delete('/contacts/:id', deleteContact);
 
 router.get('/enrollments', getEnrollments);
+router.patch('/enrollments/:id', updateEnrollment);
 router.delete('/enrollments/:id', deleteEnrollment);
 
 router.get('/recruitments', getRecruitments);

@@ -3,6 +3,7 @@ import Otp from '../models/otp.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
+import crypto from 'crypto';
 import redisClient from '../config/redis.js';
 
 const OTP_EXPIRY_MS = 5 * 60 * 1000;
@@ -11,9 +12,13 @@ const OTP_EXPIRY_MS = 5 * 60 * 1000;
 const cleanEnv = (value) => String(value || '').trim().replace(/^"|"$/g, '');
 const normalizePhone = (phone) => String(phone || '').replace(/\D/g, '');
 
-const issueAuth = (res, user) => {
+const issueAuth = async (res, user) => {
+  const sessionId = crypto.randomBytes(24).toString('hex');
+  user.activeSessionId = sessionId;
+  await user.save({ validateModifiedOnly: true });
+
   const token = jwt.sign(
-    { id: user._id, role: user.role },
+    { id: user._id, role: user.role, sid: sessionId },
     process.env.JWT_SECRET,
     { expiresIn: '5d' }
   );
@@ -126,7 +131,7 @@ const verifyOtpFromDb = async (email, purpose, otp, consume = true) => {
 // ================= AUTH =================
 export const registerWithOtp = async (req, res) => {
   try {
-    const { name, email, password, phone, role, institution, otp } = req.body;
+    const { name, email, password, phone, institution, otp } = req.body;
 
     const cleanEmail = String(email).trim().toLowerCase();
     const cleanPhone = normalizePhone(phone);
@@ -159,11 +164,11 @@ export const registerWithOtp = async (req, res) => {
       email: cleanEmail,
       password: hashed,
       phone: cleanPhone,
-      role: role || 'student',
+      role: 'student',
       institution,
     });
 
-    issueAuth(res, user);
+    await issueAuth(res, user);
 
     const safeUser = await User.findById(user._id).select('-password');
 
@@ -227,7 +232,7 @@ export const login = async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
-    issueAuth(res, user);
+    await issueAuth(res, user);
 
     const safeUser = await User.findById(user._id).select('-password');
 
@@ -246,7 +251,7 @@ export const loginWithOtp = async (req, res) => {
 
     await verifyOtpFromDb(email, 'login', otp, true);
 
-    issueAuth(res, user);
+    await issueAuth(res, user);
 
     const safeUser = await User.findById(user._id).select('-password');
 
@@ -258,6 +263,11 @@ export const loginWithOtp = async (req, res) => {
 
 export const logout = async (req, res) => {
   const token = req.cookies.token;
+
+  if (req.user) {
+    req.user.activeSessionId = null;
+    await req.user.save({ validateModifiedOnly: true });
+  }
 
   if (token) {
     const payload = jwt.decode(token);

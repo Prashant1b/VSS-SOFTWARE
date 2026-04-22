@@ -11,6 +11,8 @@ import enrollmentRoutes from './routes/enrollment.js';
 import courseEnrollmentRoutes from './routes/courseEnrollment.js';
 import adminRoutes from './routes/admin.js';
 import publicRoutes from './routes/public.js';
+import teacherRoutes from './routes/teacher.js';
+import classroomRoutes from './routes/classroom.js';
 import cookieParser from 'cookie-parser';
 dotenv.config();
 
@@ -37,6 +39,8 @@ app.use('/api/enrollment', enrollmentRoutes);
 app.use('/api/course-enrollment', courseEnrollmentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/teacher', teacherRoutes);
+app.use('/api/classroom', classroomRoutes);
 
 
   const Initaliseconnection=async()=>{

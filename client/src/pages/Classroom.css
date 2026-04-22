@@ -1,0 +1,165 @@
+.classroom-page {
+  min-height: calc(100vh - 72px);
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  padding: 40px 0 72px;
+}
+
+.classroom-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.classroom-hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.classroom-hero h1 {
+  font-size: 34px;
+  margin-bottom: 10px;
+}
+
+.classroom-hero p {
+  max-width: 760px;
+  color: var(--text-secondary);
+}
+
+.classroom-section {
+  margin-top: 28px;
+}
+
+.classroom-section h2 {
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+.classroom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.classroom-card,
+.classroom-empty-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 22px;
+}
+
+.classroom-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.classroom-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.classroom-pill.live {
+  background: rgba(10, 37, 64, 0.08);
+  color: var(--primary);
+}
+
+.classroom-pill.recorded {
+  background: rgba(0, 135, 90, 0.1);
+  color: var(--secondary);
+}
+
+.classroom-card h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.classroom-card p,
+.classroom-empty-card p {
+  color: var(--text-secondary);
+}
+
+.classroom-meta,
+.classroom-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.classroom-meta span,
+.classroom-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.classroom-links a {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.classroom-status-note {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.classroom-live-state {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.classroom-live-state.is-live {
+  color: var(--brand-red);
+  background: rgba(200, 16, 46, 0.1);
+}
+
+.classroom-player {
+  margin-top: 16px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0f172a;
+  border: 1px solid rgba(10, 37, 64, 0.1);
+}
+
+.classroom-player iframe,
+.classroom-player video {
+  display: block;
+  width: 100%;
+  min-height: 320px;
+  border: none;
+  background: #000;
+}
+
+@media (max-width: 768px) {
+  .classroom-hero {
+    flex-direction: column;
+  }
+
+  .classroom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .classroom-hero h1 {
+    font-size: 28px;
+  }
+}

@@ -7,6 +7,8 @@ const enrollmentSchema = new mongoose.Schema({
   phone: { type: String, required: true },
   course: { type: String, required: true },
   courseSlug: { type: String },
+  batchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch', default: null },
+  batchName: { type: String, default: '' },
   institution: { type: String },
   message: { type: String },
   source: {

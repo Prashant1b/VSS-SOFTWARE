@@ -8,6 +8,8 @@ import User from '../models/User.js';
 import Contact from '../models/Contact.js';
 import Enrollment from '../models/Enrollment.js';
 import Recruitment from '../models/Recruitment.js';
+import Batch from '../models/Batch.js';
+import ClassSession from '../models/ClassSession.js';
 
 const normalizeListInput = (value) => {
   if (Array.isArray(value)) {
@@ -60,7 +62,7 @@ export const getUsers = async (req, res) => {
 export const updateUserRole = async (req, res) => {
   try {
     const { role } = req.body;
-    const allowedRoles = ['student', 'employer', 'admin'];
+    const allowedRoles = ['student', 'employer', 'teacher', 'admin'];
 
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({ success: false, message: 'Invalid role selected' });
@@ -346,10 +348,133 @@ export const getEnrollments = async (req, res) => {
   }
 };
 
+export const updateEnrollment = async (req, res) => {
+  try {
+    const enrollment = await Enrollment.findById(req.params.id);
+    if (!enrollment) {
+      return res.status(404).json({ success: false, message: 'Enrollment not found' });
+    }
+
+    if (req.body.status) {
+      enrollment.status = req.body.status;
+    }
+
+    if (req.body.batchId === '' || req.body.batchId === null) {
+      enrollment.batchId = null;
+      enrollment.batchName = '';
+    } else if (req.body.batchId) {
+      const batch = await Batch.findById(req.body.batchId);
+      if (!batch) {
+        return res.status(404).json({ success: false, message: 'Batch not found' });
+      }
+      if (enrollment.courseSlug && batch.courseSlug !== enrollment.courseSlug) {
+        return res.status(400).json({ success: false, message: 'Batch course does not match this enrollment' });
+      }
+      enrollment.batchId = batch._id;
+      enrollment.batchName = batch.title;
+    }
+
+    await enrollment.save();
+    res.json({ success: true, data: enrollment });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const deleteEnrollment = async (req, res) => {
   try {
     await Enrollment.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Enrollment deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getBatches = async (req, res) => {
+  try {
+    const data = await Batch.find().sort({ createdAt: -1 });
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const createBatch = async (req, res) => {
+  try {
+    const { title, courseSlug, teacherId, description, startDate, isActive } = req.body;
+    const [course, teacher] = await Promise.all([
+      Course.findOne({ slug: courseSlug }),
+      User.findOne({ _id: teacherId, role: { $in: ['teacher', 'admin'] } }),
+    ]);
+
+    if (!course) {
+      return res.status(404).json({ success: false, message: 'Course not found' });
+    }
+
+    if (!teacher) {
+      return res.status(404).json({ success: false, message: 'Teacher not found' });
+    }
+
+    const item = new Batch({
+      title,
+      courseSlug: course.slug,
+      courseTitle: course.title,
+      teacher: teacher._id,
+      teacherName: teacher.name,
+      description: String(description || '').trim(),
+      startDate: startDate ? new Date(startDate) : null,
+      isActive: typeof isActive === 'boolean' ? isActive : true,
+    });
+    await item.save();
+    res.status(201).json({ success: true, data: item });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const updateBatch = async (req, res) => {
+  try {
+    const item = await Batch.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ success: false, message: 'Batch not found' });
+    }
+
+    if (req.body.courseSlug) {
+      const course = await Course.findOne({ slug: req.body.courseSlug });
+      if (!course) {
+        return res.status(404).json({ success: false, message: 'Course not found' });
+      }
+      item.courseSlug = course.slug;
+      item.courseTitle = course.title;
+    }
+
+    if (req.body.teacherId) {
+      const teacher = await User.findOne({ _id: req.body.teacherId, role: { $in: ['teacher', 'admin'] } });
+      if (!teacher) {
+        return res.status(404).json({ success: false, message: 'Teacher not found' });
+      }
+      item.teacher = teacher._id;
+      item.teacherName = teacher.name;
+    }
+
+    if (req.body.title !== undefined) item.title = req.body.title;
+    if (req.body.description !== undefined) item.description = String(req.body.description || '').trim();
+    if (req.body.startDate !== undefined) item.startDate = req.body.startDate ? new Date(req.body.startDate) : null;
+    if (req.body.isActive !== undefined) item.isActive = Boolean(req.body.isActive);
+
+    await item.save();
+    res.json({ success: true, data: item });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteBatch = async (req, res) => {
+  try {
+    await Batch.findByIdAndDelete(req.params.id);
+    await ClassSession.deleteMany({ batch: req.params.id });
+    await Enrollment.updateMany({ batchId: req.params.id }, { $set: { batchId: null, batchName: '' } });
+    res.json({ success: true, message: 'Batch deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

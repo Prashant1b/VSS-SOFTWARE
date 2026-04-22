@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   FiHome, FiUsers, FiBookOpen, FiMessageSquare, FiBriefcase,
-  FiBarChart2, FiStar, FiMail, FiFileText, FiArrowLeft,
-  FiPlus, FiEdit2, FiTrash2, FiX, FiMenu, FiCheckCircle,
+  FiBarChart2, FiStar, FiMail, FiFileText, FiArrowLeft, FiCalendar,
+  FiPlus, FiEdit2, FiTrash2, FiX, FiMenu, FiCheckCircle, FiMonitor,
   FiAlertCircle, FiLogOut, FiShield,
 } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
@@ -14,6 +14,8 @@ const SECTIONS = [
   { key: 'dashboard', label: 'Dashboard', icon: <FiHome size={18} /> },
   { key: 'placements', label: 'Placements', icon: <FiStar size={18} />, section: 'Content' },
   { key: 'courses', label: 'Courses', icon: <FiBookOpen size={18} /> },
+  { key: 'batches', label: 'Batches', icon: <FiCalendar size={18} /> },
+  { key: 'live-control', label: 'Live Classes', icon: <FiMonitor size={18} /> },
   { key: 'testimonials', label: 'Testimonials', icon: <FiMessageSquare size={18} /> },
   { key: 'hiring', label: 'Hiring Drives', icon: <FiBriefcase size={18} /> },
   { key: 'stats', label: 'Site Stats', icon: <FiBarChart2 size={18} /> },
@@ -37,12 +39,18 @@ const placementFields = [
 const courseFields = [
   { key: 'title', label: 'Course Title', required: true },
   { key: 'slug', label: 'Slug', required: true, placeholder: 'e.g. genai' },
+  { key: 'categoryLabel', label: 'Card Category', placeholder: 'e.g. Full Stack Development' },
+  { key: 'cardHeadline', label: 'Card Headline', placeholder: 'e.g. With GenAI' },
   { key: 'duration', label: 'Duration', required: true, placeholder: 'e.g. 60 Hours' },
+  { key: 'durationLabel', label: 'Card Duration Label', placeholder: 'e.g. 8 Months' },
   { key: 'price', label: 'Price', required: true, placeholder: 'e.g. Rs 45,000' },
   { key: 'amount', label: 'Amount (INR)', required: true, type: 'number', placeholder: 'e.g. 45000' },
   { key: 'originalPrice', label: 'Original Price', placeholder: 'e.g. Rs 60,000' },
   { key: 'mode', label: 'Mode', placeholder: 'e.g. Online / Self-Paced' },
   { key: 'students', label: 'Students Count', placeholder: 'e.g. 150+' },
+  { key: 'projectsCount', label: 'Projects Count', placeholder: 'e.g. 12' },
+  { key: 'nextBatchLabel', label: 'Next Batch Label', placeholder: 'e.g. 15 May 2026' },
+  { key: 'accentTone', label: 'Card Accent', type: 'select', options: ['violet', 'blue', 'sky'] },
   { key: 'rating', label: 'Rating', placeholder: 'e.g. 4.9' },
   { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'features', label: 'Features', type: 'textarea', placeholder: 'One feature per line or comma separated' },
@@ -107,6 +115,7 @@ const enrollmentColumns = [
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
   { key: 'course', label: 'Course' },
+  { key: 'batchName', label: 'Batch', render: (value) => value || 'Not assigned' },
   { key: 'status', label: 'Status', render: (value) => <span className={`admin-badge ${value === 'paid' ? 'admin-badge-active' : 'admin-badge-student'}`}>{value || 'lead'}</span> },
   { key: 'institution', label: 'Institution' },
   { key: 'demoSlotAt', label: 'Demo Slot', render: (value) => value ? new Date(value).toLocaleString() : '-' },
@@ -196,13 +205,15 @@ export default function AdminPanel() {
           {activeSection === 'dashboard' && <DashboardSection />}
           {activeSection === 'placements' && <CrudSection endpoint="placements" fields={placementFields} />}
           {activeSection === 'courses' && <CrudSection endpoint="courses" fields={courseFields} />}
+          {activeSection === 'batches' && <BatchSection />}
+          {activeSection === 'live-control' && <LiveClassesSection />}
           {activeSection === 'testimonials' && <CrudSection endpoint="testimonials" fields={testimonialFields} />}
           {activeSection === 'hiring' && <CrudSection endpoint="hiring-drives" fields={hiringFields} />}
           {activeSection === 'stats' && <CrudSection endpoint="stats" fields={statFields} />}
           {activeSection === 'partners' && <CrudSection endpoint="partners" fields={partnerFields} />}
           {activeSection === 'users' && <UsersSection />}
           {activeSection === 'contacts' && <ReadOnlySection endpoint="contacts" columns={contactColumns} canDelete />}
-          {activeSection === 'enrollments' && <ReadOnlySection endpoint="enrollments" columns={enrollmentColumns} canDelete />}
+          {activeSection === 'enrollments' && <EnrollmentSection />}
           {activeSection === 'recruitments' && <ReadOnlySection endpoint="recruitments" columns={recruitmentColumns} canDelete />}
         </div>
       </div>
@@ -520,15 +531,13 @@ function UsersSection() {
   const { user: currentUser } = useAuth()
   const [updatingId, setUpdatingId] = useState(null)
 
-  const handleRoleToggle = async (user, refresh) => {
-    const nextRole = user.role === 'admin' ? (user.previousRoleBeforeAdmin || 'student') : 'admin'
-    const actionLabel = nextRole === 'admin' ? 'make this user an admin' : 'remove admin access from this user'
-
-    if (!window.confirm(`Are you sure you want to ${actionLabel}?`)) return
+  const handleRoleChange = async (user, role, refresh) => {
+    if (role === user.role) return
+    if (!window.confirm(`Are you sure you want to change ${user.name}'s role to ${role}?`)) return
 
     setUpdatingId(user._id)
     try {
-      await api.patch(`/admin/users/${user._id}/role`, { role: nextRole }, { withCredentials: true })
+      await api.patch(`/admin/users/${user._id}/role`, { role }, { withCredentials: true })
       refresh()
     } catch (error) {
       alert(error.response?.data?.message || 'Error updating user role')
@@ -546,23 +555,509 @@ function UsersSection() {
         const isCurrentAdmin = currentUser?._id === item._id
 
         return (
-          <button
-            className="btn-admin btn-admin-primary btn-admin-sm"
-            onClick={() => handleRoleToggle(item, refresh)}
-            disabled={updatingId === item._id || isCurrentAdmin}
-            title={item.role === 'admin' ? 'Remove admin access' : 'Make admin'}
-          >
-            <FiShield size={12} />
-            {isCurrentAdmin
-              ? 'Current Admin'
-              : updatingId === item._id
-                ? '...'
-                : item.role === 'admin'
-                  ? 'Remove Admin'
-                  : 'Make Admin'}
-          </button>
+          <>
+            <button
+              className="btn-admin btn-admin-primary btn-admin-sm"
+              disabled={isCurrentAdmin}
+              title="Current admin cannot edit own role from here"
+            >
+              <FiShield size={12} />
+              {isCurrentAdmin ? 'Current Admin' : 'Role'}
+            </button>
+
+            {!isCurrentAdmin && (
+              <select
+                className="admin-inline-select"
+                value={item.role}
+                disabled={updatingId === item._id}
+                onChange={(event) => handleRoleChange(item, event.target.value, refresh)}
+              >
+                <option value="student">Student</option>
+                <option value="employer">Employer</option>
+                <option value="teacher">Teacher</option>
+                <option value="admin">Admin</option>
+              </select>
+            )}
+          </>
         )
       }}
     />
+  )
+}
+
+function LiveClassesSection() {
+  const navigate = useNavigate()
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [busyId, setBusyId] = useState('')
+
+  const fetchData = useCallback(() => {
+    setLoading(true)
+    api.get('/teacher/classes', { withCredentials: true })
+      .then((res) => setData(res.data.data || []))
+      .catch(() => setData([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const handleStart = async (item) => {
+    setBusyId(item._id)
+    try {
+      await api.post(`/teacher/classes/${item._id}/live/start`, {}, { withCredentials: true })
+      fetchData()
+    } catch (error) {
+      alert(error.response?.data?.message || 'Unable to start live class')
+    } finally {
+      setBusyId('')
+    }
+  }
+
+  const handleEnd = async (item) => {
+    setBusyId(item._id)
+    try {
+      await api.post(`/teacher/classes/${item._id}/live/end`, {}, { withCredentials: true })
+      fetchData()
+    } catch (error) {
+      alert(error.response?.data?.message || 'Unable to end live class')
+    } finally {
+      setBusyId('')
+    }
+  }
+
+  if (loading) return <div className="admin-loading"><span className="spinner" /></div>
+
+  const liveFirst = [...data].sort((a, b) => {
+    if (a.liveStatus === 'live' && b.liveStatus !== 'live') return -1
+    if (a.liveStatus !== 'live' && b.liveStatus === 'live') return 1
+    return new Date(a.scheduledFor || a.createdAt).getTime() - new Date(b.scheduledFor || b.createdAt).getTime()
+  })
+
+  return (
+    <div className="admin-table-wrapper">
+      <div className="admin-table-header">
+        <div>
+          <h3>{liveFirst.length} classes</h3>
+          <p className="admin-helper-text">Admin can monitor, start, open, and end any teacher live class from this section.</p>
+        </div>
+        <button className="btn-admin" onClick={fetchData}>Refresh</button>
+      </div>
+
+      {liveFirst.length === 0 ? (
+        <div className="admin-empty">
+          <FiAlertCircle size={32} />
+          <p>No classes found yet.</p>
+        </div>
+      ) : (
+        <div className="admin-table-scroll">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Batch</th>
+                <th>Teacher</th>
+                <th>Type</th>
+                <th>Schedule</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {liveFirst.map((item) => (
+                <tr key={item._id}>
+                  <td data-label="Class">
+                    <strong>{item.title}</strong>
+                    <div className="admin-helper-text">{item.description || 'No description'}</div>
+                  </td>
+                  <td data-label="Batch">
+                    {item.batchDetails?.title || item.batchName || '-'}
+                    <div className="admin-helper-text">{item.batchDetails?.courseTitle || item.courseSlug}</div>
+                  </td>
+                  <td data-label="Teacher">{item.batchDetails?.teacherName || '-'}</td>
+                  <td data-label="Type" style={{ textTransform: 'capitalize' }}>{item.sessionType}</td>
+                  <td data-label="Schedule">
+                    {item.scheduledFor ? new Date(item.scheduledFor).toLocaleString('en-IN') : '-'}
+                  </td>
+                  <td data-label="Status">
+                    <span className={`admin-badge ${item.liveStatus === 'live' ? 'admin-badge-active' : 'admin-badge-student'}`}>
+                      {item.sessionType === 'live' ? (item.liveStatus || 'scheduled') : (item.isPublished ? 'published' : 'draft')}
+                    </span>
+                  </td>
+                  <td data-label="Actions">
+                    <div className="actions actions-stack">
+                      {item.sessionType === 'live' && item.liveStatus !== 'live' && (
+                        <button
+                          className="btn-admin btn-admin-primary btn-admin-sm"
+                          disabled={busyId === item._id}
+                          onClick={() => handleStart(item)}
+                        >
+                          Start
+                        </button>
+                      )}
+                      {item.sessionType === 'live' && item.liveStatus === 'live' && (
+                        <>
+                          <button
+                            className="btn-admin btn-admin-primary btn-admin-sm"
+                            onClick={() => navigate(`/live-class/${item._id}`)}
+                          >
+                            Open
+                          </button>
+                          <button
+                            className="btn-admin btn-admin-danger btn-admin-sm"
+                            disabled={busyId === item._id}
+                            onClick={() => handleEnd(item)}
+                          >
+                            End
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BatchSection() {
+  const [data, setData] = useState([])
+  const [courses, setCourses] = useState([])
+  const [teachers, setTeachers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [editingId, setEditingId] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    title: '',
+    courseSlug: '',
+    teacherId: '',
+    description: '',
+    startDate: '',
+    isActive: true,
+  })
+
+  const fetchData = useCallback(() => {
+    setLoading(true)
+    Promise.all([
+      api.get('/admin/batches', { withCredentials: true }),
+      api.get('/admin/courses', { withCredentials: true }),
+      api.get('/admin/users', { withCredentials: true }),
+    ])
+      .then(([batchesRes, coursesRes, usersRes]) => {
+        setData(batchesRes.data.data || [])
+        setCourses((coursesRes.data.data || []).filter((course) => course.isActive))
+        setTeachers((usersRes.data.data || []).filter((item) => ['teacher', 'admin'].includes(item.role)))
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const resetForm = () => {
+    setForm({
+      title: '',
+      courseSlug: '',
+      teacherId: '',
+      description: '',
+      startDate: '',
+      isActive: true,
+    })
+    setEditingId(null)
+  }
+
+  const openAdd = () => {
+    resetForm()
+    setShowModal(true)
+  }
+
+  const openEdit = (batch) => {
+    setForm({
+      title: batch.title || '',
+      courseSlug: batch.courseSlug || '',
+      teacherId: typeof batch.teacher === 'string' ? batch.teacher : batch.teacher?._id || '',
+      description: batch.description || '',
+      startDate: batch.startDate ? new Date(batch.startDate).toISOString().split('T')[0] : '',
+      isActive: Boolean(batch.isActive),
+    })
+    setEditingId(batch._id)
+    setShowModal(true)
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      if (editingId) {
+        await api.put(`/admin/batches/${editingId}`, form, { withCredentials: true })
+      } else {
+        await api.post('/admin/batches', form, { withCredentials: true })
+      }
+      setShowModal(false)
+      resetForm()
+      fetchData()
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error saving batch')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this batch?')) return
+    try {
+      await api.delete(`/admin/batches/${id}`, { withCredentials: true })
+      fetchData()
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error deleting batch')
+    }
+  }
+
+  if (loading) return <div className="admin-loading"><span className="spinner" /></div>
+
+  return (
+    <div>
+      <div className="admin-table-wrapper">
+        <div className="admin-table-header">
+          <div>
+            <h3>{data.length} batches</h3>
+            <p className="admin-helper-text">Create batches here, then teachers can schedule live classes only for their assigned batches.</p>
+          </div>
+          <button className="btn-admin btn-admin-primary" onClick={openAdd}>
+            <FiPlus size={14} /> Add Batch
+          </button>
+        </div>
+
+        {data.length === 0 ? (
+          <div className="admin-empty">
+            <FiAlertCircle size={32} />
+            <p>No batches created yet.</p>
+          </div>
+        ) : (
+          <div className="admin-table-scroll">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Batch</th>
+                  <th>Course</th>
+                  <th>Teacher</th>
+                  <th>Start Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((batch) => (
+                  <tr key={batch._id}>
+                    <td data-label="Batch">{batch.title}</td>
+                    <td data-label="Course">{batch.courseTitle}</td>
+                    <td data-label="Teacher">{batch.teacherName}</td>
+                    <td data-label="Start Date">{batch.startDate ? new Date(batch.startDate).toLocaleDateString('en-IN') : '-'}</td>
+                    <td data-label="Status">
+                      <span className={`admin-badge ${batch.isActive ? 'admin-badge-active' : 'admin-badge-inactive'}`}>
+                        {batch.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td data-label="Actions">
+                      <div className="actions">
+                        <button className="btn-admin btn-admin-edit btn-admin-sm" onClick={() => openEdit(batch)}>
+                          <FiEdit2 size={12} />
+                        </button>
+                        <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={() => handleDelete(batch._id)}>
+                          <FiTrash2 size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {showModal && (
+        <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="admin-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h3>{editingId ? 'Edit Batch' : 'Create Batch'}</h3>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className="admin-modal-body">
+              <div className="admin-form-group">
+                <label>Batch Title</label>
+                <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+              </div>
+              <div className="admin-form-group">
+                <label>Course</label>
+                <select value={form.courseSlug} onChange={(event) => setForm({ ...form, courseSlug: event.target.value })}>
+                  <option value="">Select course</option>
+                  {courses.map((course) => (
+                    <option key={course._id} value={course.slug}>{course.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="admin-form-group">
+                <label>Teacher</label>
+                <select value={form.teacherId} onChange={(event) => setForm({ ...form, teacherId: event.target.value })}>
+                  <option value="">Select teacher</option>
+                  {teachers.map((teacher) => (
+                    <option key={teacher._id} value={teacher._id}>{teacher.name} ({teacher.role})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="admin-form-group">
+                <label>Start Date</label>
+                <input type="date" value={form.startDate} onChange={(event) => setForm({ ...form, startDate: event.target.value })} />
+              </div>
+              <div className="admin-form-group">
+                <label>Description</label>
+                <textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
+              </div>
+              <div className="admin-form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={form.isActive}
+                    onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
+                    style={{ width: 'auto' }}
+                  />
+                  <span>Batch active</span>
+                </label>
+              </div>
+            </div>
+            <div className="admin-modal-footer">
+              <button className="btn-admin" onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="btn-admin btn-admin-primary" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : editingId ? 'Update Batch' : 'Create Batch'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function EnrollmentSection() {
+  const [data, setData] = useState([])
+  const [batches, setBatches] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [updatingId, setUpdatingId] = useState(null)
+
+  const fetchData = useCallback(() => {
+    setLoading(true)
+    Promise.all([
+      api.get('/admin/enrollments', { withCredentials: true }),
+      api.get('/admin/batches', { withCredentials: true }),
+    ])
+      .then(([enrollmentsRes, batchesRes]) => {
+        setData(enrollmentsRes.data.data || [])
+        setBatches(batchesRes.data.data || [])
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this enrollment?')) return
+    try {
+      await api.delete(`/admin/enrollments/${id}`, { withCredentials: true })
+      fetchData()
+    } catch {
+      alert('Error deleting')
+    }
+  }
+
+  const handleBatchChange = async (item, batchId) => {
+    setUpdatingId(item._id)
+    try {
+      await api.patch(`/admin/enrollments/${item._id}`, { batchId }, { withCredentials: true })
+      fetchData()
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error assigning batch')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  if (loading) return <div className="admin-loading"><span className="spinner" /></div>
+
+  return (
+    <div className="admin-table-wrapper">
+      <div className="admin-table-header">
+        <div>
+          <h3>{data.length} records</h3>
+          <p className="admin-helper-text">Paid student ko classroom access tab milega jab uske enrollment ko same course ke batch se assign kiya jayega.</p>
+        </div>
+      </div>
+      {data.length === 0 ? (
+        <div className="admin-empty">
+          <FiAlertCircle size={32} />
+          <p>No records found.</p>
+        </div>
+      ) : (
+        <div className="admin-table-scroll">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                {enrollmentColumns.map((column) => <th key={column.key}>{column.label}</th>)}
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((item) => {
+                const matchingBatches = batches.filter((batch) => !item.courseSlug || batch.courseSlug === item.courseSlug)
+
+                return (
+                  <tr key={item._id}>
+                    {enrollmentColumns.map((column) => (
+                      <td key={column.key} data-label={column.label}>
+                        {column.render ? column.render(item[column.key]) : (item[column.key] ?? '-')}
+                      </td>
+                    ))}
+                    <td data-label="Actions">
+                      <div className="actions actions-stack">
+                        {item.status === 'paid' && (
+                          <select
+                            className="admin-inline-select"
+                            value={item.batchId || ''}
+                            disabled={updatingId === item._id}
+                            onChange={(event) => handleBatchChange(item, event.target.value)}
+                          >
+                            <option value="">No Batch</option>
+                            {matchingBatches.map((batch) => (
+                              <option key={batch._id} value={batch._id}>
+                                {batch.title}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={() => handleDelete(item._id)}>
+                          <FiTrash2 size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   )
 }
