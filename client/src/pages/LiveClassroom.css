@@ -132,6 +132,11 @@
   color: #1d4ed8;
 }
 
+.live-student-mode-badge {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+}
+
 .live-presentation-layout,
 .live-classroom-grid {
   flex: 1;
