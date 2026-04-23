@@ -158,6 +158,38 @@
   flex-wrap: wrap;
 }
 
+.teacher-upload-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.teacher-upload-help {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.teacher-upload-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.teacher-upload-status strong {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.teacher-upload-status span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 .teacher-list {
   display: flex;
   flex-direction: column;
