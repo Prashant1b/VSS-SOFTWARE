@@ -1,5 +1,6 @@
 .live-classroom-page {
   min-height: 100vh;
+  box-sizing: border-box;
   padding: 18px;
   background:
     radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 26%),
@@ -78,7 +79,9 @@
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) 360px;
   gap: 16px;
-  min-height: calc(100vh - 150px);
+  height: calc(100vh - 178px);
+  min-height: 0;
+  align-items: stretch;
 }
 
 .live-classroom-main {
@@ -127,9 +130,57 @@
   font-weight: 600;
 }
 
+.live-panel-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #0f172a;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.live-panel-action:hover {
+  background: #1e293b;
+}
+
+.live-panel-action.active {
+  background: #2563eb;
+}
+
 .live-screen-badge {
   background: #dbeafe;
   color: #1d4ed8;
+}
+
+.live-mic-meter-badge {
+  background: #edf2ff !important;
+  color: #1e3a8a !important;
+}
+
+.live-mic-meter-badge i {
+  width: 64px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.14);
+}
+
+.live-mic-meter-badge b {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  transition: transform 90ms linear, background-color 120ms ease;
+  background: linear-gradient(90deg, #22c55e 0%, #38bdf8 55%, #2563eb 100%);
+}
+
+.live-mic-meter-badge.active b {
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.28);
 }
 
 .live-student-mode-badge {
@@ -148,7 +199,6 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   border-radius: 30px;
   border: 1px solid #d7e3fb;
   background: #f8fbff;
@@ -157,9 +207,10 @@
 
 .live-screen-main {
   flex: 1;
-  min-height: 520px;
+  min-height: 0;
   position: relative;
   overflow: hidden;
+  background: #0f172a;
 }
 
 .live-screen-main .live-track-slot,
@@ -170,8 +221,8 @@
 }
 
 .live-screen-main .live-media {
-  object-fit: contain;
-  background: #eff6ff;
+  object-fit: cover;
+  background: #0f172a;
 }
 
 .live-camera-strip {
@@ -180,6 +231,7 @@
   right: 18px;
   bottom: 18px;
   display: flex;
+  justify-content: flex-end;
   gap: 12px;
   overflow-x: auto;
   padding: 8px 4px 4px;
@@ -187,14 +239,21 @@
 }
 
 .live-camera-pip {
-  width: 170px;
-  min-width: 170px;
-  height: 104px;
+  width: 102px;
+  min-width: 102px;
+  height: 102px;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.96);
-  border: 1px solid #d7e3fb;
-  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.12);
+  border: 3px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.live-camera-pip.is-speaking {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.18), 0 18px 40px rgba(34, 197, 94, 0.22);
+  transform: translateY(-2px);
 }
 
 .live-camera-pip .live-track-slot,
@@ -202,6 +261,9 @@
 .live-camera-pip .live-media {
   width: 100%;
   height: 100%;
+  min-height: 0;
+  border-radius: 50%;
+  border: 0;
 }
 
 .live-camera-pip .live-media {
@@ -209,10 +271,12 @@
 }
 
 .live-camera-pip .live-track-label {
-  bottom: 8px;
-  left: 8px;
-  padding: 4px 8px;
-  font-size: 11px;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  padding: 3px 7px;
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .live-classroom-grid {
@@ -223,6 +287,12 @@
 
 .live-participant-card {
   min-height: 220px;
+}
+
+.live-participant-card.is-speaking .live-track-slot,
+.live-participant-card.is-speaking .live-avatar-card {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16), 0 18px 40px rgba(34, 197, 94, 0.14);
 }
 
 .live-track-slot,
@@ -239,6 +309,13 @@
 
 .live-track-slot {
   min-height: 220px;
+}
+
+.live-track-slot.is-speaking,
+.live-avatar-card.is-speaking,
+.live-avatar-pip.is-speaking {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16), 0 18px 40px rgba(34, 197, 94, 0.14);
 }
 
 .live-track-mount,
@@ -265,6 +342,33 @@
   backdrop-filter: blur(12px);
 }
 
+.live-speaking-banner,
+.live-speaking-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: white;
+  font-style: normal;
+  font-weight: 700;
+  box-shadow: 0 10px 24px rgba(22, 163, 74, 0.24);
+}
+
+.live-speaking-banner {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 7px 12px;
+  font-size: 12px;
+  z-index: 2;
+}
+
+.live-speaking-chip {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
 .live-avatar-card,
 .live-avatar-pip {
   display: flex;
@@ -287,6 +391,34 @@
   font-weight: 800;
 }
 
+.live-camera-pip .live-avatar-pip {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 0;
+  gap: 6px;
+}
+
+.live-camera-pip .live-avatar-pip strong {
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+}
+
+.live-camera-pip .live-avatar-pip span {
+  max-width: 82px;
+  font-size: 11px;
+}
+
+.live-camera-pip .live-speaking-chip {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
 .live-avatar-card span,
 .live-avatar-pip span {
   max-width: calc(100% - 28px);
@@ -301,6 +433,8 @@
 .live-chat-panel {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  max-height: 100%;
   min-height: 0;
   overflow: hidden;
 }
@@ -308,6 +442,55 @@
 .live-chat-header {
   padding: 18px 18px 12px;
   border-bottom: 1px solid #e0ebff;
+}
+
+.live-participant-manager {
+  border-bottom: 1px solid #e0ebff;
+}
+
+.live-participant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 14px 16px 16px;
+}
+
+.live-participant-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #dbe7fb;
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.live-participant-row strong,
+.live-participant-row small {
+  display: block;
+}
+
+.live-participant-row strong {
+  color: #0f172a;
+  margin-bottom: 3px;
+}
+
+.live-participant-row small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.live-remove-btn {
+  flex: 0 0 auto;
+  align-self: center;
+  width: auto;
+  min-width: 96px;
+  padding: 8px 12px;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .live-chat-header h2 {
@@ -327,6 +510,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -424,10 +608,12 @@
 @media (max-width: 1200px) {
   .live-classroom-shell {
     grid-template-columns: 1fr;
+    height: auto;
   }
 
   .live-chat-panel {
     min-height: 360px;
+    max-height: 420px;
   }
 }
 
@@ -456,10 +642,14 @@
   }
 
   .live-camera-pip {
-    width: 132px;
-    min-width: 132px;
-    height: 84px;
-    border-radius: 14px;
+    width: 82px;
+    min-width: 82px;
+    height: 82px;
+  }
+
+  .live-chat-panel {
+    min-height: 320px;
+    max-height: 360px;
   }
 }
 
@@ -475,5 +665,23 @@
 
   .live-chat-form {
     flex-direction: column;
+  }
+
+  .live-classroom-shell {
+    gap: 12px;
+  }
+
+  .live-chat-panel {
+    max-height: 52vh;
+  }
+
+  .live-participant-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .live-remove-btn {
+    align-self: flex-start;
+    min-width: 0;
   }
 }

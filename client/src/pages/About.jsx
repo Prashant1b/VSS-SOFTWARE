@@ -75,13 +75,12 @@ export default function About() {
           </p>
         </div>
       </section>
-
-      {/* Impact Stats */}
+      
       <section className="about-impact">
         <div className="container">
           <div className="about-impact-grid">
             <div className="about-impact-item">
-              <div className="about-impact-value"><AnimatedCounter end={500} suffix="+" /></div>
+              <div className="about-impact-value"><AnimatedCounter end={400} suffix="+" /></div>
               <div className="about-impact-label">Students Placed</div>
             </div>
             <div className="about-impact-item">

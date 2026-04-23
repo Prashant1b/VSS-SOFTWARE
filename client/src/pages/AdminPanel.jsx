@@ -4,7 +4,7 @@ import {
   FiHome, FiUsers, FiBookOpen, FiMessageSquare, FiBriefcase,
   FiBarChart2, FiStar, FiMail, FiFileText, FiArrowLeft, FiCalendar,
   FiPlus, FiEdit2, FiTrash2, FiX, FiMenu, FiCheckCircle, FiMonitor,
-  FiAlertCircle, FiLogOut, FiShield,
+  FiAlertCircle, FiLogOut, FiShield, FiUserPlus,
 } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
@@ -747,10 +747,13 @@ function BatchSection() {
   const [data, setData] = useState([])
   const [courses, setCourses] = useState([])
   const [teachers, setTeachers] = useState([])
+  const [enrollments, setEnrollments] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [managingBatch, setManagingBatch] = useState(null)
+  const [studentActionId, setStudentActionId] = useState('')
   const [form, setForm] = useState({
     title: '',
     courseSlug: '',
@@ -766,11 +769,13 @@ function BatchSection() {
       api.get('/admin/batches', { withCredentials: true }),
       api.get('/admin/courses', { withCredentials: true }),
       api.get('/admin/users', { withCredentials: true }),
+      api.get('/admin/enrollments', { withCredentials: true }),
     ])
-      .then(([batchesRes, coursesRes, usersRes]) => {
+      .then(([batchesRes, coursesRes, usersRes, enrollmentsRes]) => {
         setData(batchesRes.data.data || [])
         setCourses((coursesRes.data.data || []).filter((course) => course.isActive))
         setTeachers((usersRes.data.data || []).filter((item) => ['teacher', 'admin'].includes(item.role)))
+        setEnrollments(enrollmentsRes.data.data || [])
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -838,7 +843,35 @@ function BatchSection() {
     }
   }
 
+  const openStudentManager = (batch) => {
+    setManagingBatch(batch)
+  }
+
+  const handleStudentBatchUpdate = async (enrollmentId, batchId) => {
+    setStudentActionId(enrollmentId)
+    try {
+      await api.patch(`/admin/enrollments/${enrollmentId}`, { batchId }, { withCredentials: true })
+      await fetchData()
+      setManagingBatch((current) => {
+        if (!current) return current
+        return data.find((item) => item._id === current._id) || current
+      })
+    } catch (error) {
+      alert(error.response?.data?.message || 'Unable to update student batch')
+    } finally {
+      setStudentActionId('')
+    }
+  }
+
   if (loading) return <div className="admin-loading"><span className="spinner" /></div>
+
+  const assignedStudentCount = (batchId) => enrollments.filter((item) => String(item.batchId || '') === String(batchId)).length
+  const batchStudents = managingBatch
+    ? enrollments.filter((item) => String(item.batchId || '') === String(managingBatch._id))
+    : []
+  const availableStudents = managingBatch
+    ? enrollments.filter((item) => item.status === 'paid' && item.courseSlug === managingBatch.courseSlug && String(item.batchId || '') !== String(managingBatch._id))
+    : []
 
   return (
     <div>
@@ -866,6 +899,7 @@ function BatchSection() {
                   <th>Batch</th>
                   <th>Course</th>
                   <th>Teacher</th>
+                  <th>Students</th>
                   <th>Start Date</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -877,6 +911,7 @@ function BatchSection() {
                     <td data-label="Batch">{batch.title}</td>
                     <td data-label="Course">{batch.courseTitle}</td>
                     <td data-label="Teacher">{batch.teacherName}</td>
+                    <td data-label="Students">{assignedStudentCount(batch._id)}</td>
                     <td data-label="Start Date">{batch.startDate ? new Date(batch.startDate).toLocaleDateString('en-IN') : '-'}</td>
                     <td data-label="Status">
                       <span className={`admin-badge ${batch.isActive ? 'admin-badge-active' : 'admin-badge-inactive'}`}>
@@ -885,6 +920,10 @@ function BatchSection() {
                     </td>
                     <td data-label="Actions">
                       <div className="actions">
+                        <button className="btn-admin btn-admin-primary btn-admin-sm" onClick={() => openStudentManager(batch)}>
+                          <FiUserPlus size={12} />
+                          Students
+                        </button>
                         <button className="btn-admin btn-admin-edit btn-admin-sm" onClick={() => openEdit(batch)}>
                           <FiEdit2 size={12} />
                         </button>
@@ -962,6 +1001,85 @@ function BatchSection() {
           </div>
         </div>
       )}
+
+      {managingBatch && (
+        <div className="admin-modal-overlay" onClick={() => setManagingBatch(null)}>
+          <div className="admin-modal admin-student-manager-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="admin-modal-header">
+              <div>
+                <h3>Manage Students</h3>
+                <p className="admin-helper-text">{managingBatch.title} - {managingBatch.courseTitle}</p>
+              </div>
+              <button onClick={() => setManagingBatch(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className="admin-modal-body admin-student-manager-grid">
+              <div className="admin-student-list-card">
+                <h4>Students In This Batch</h4>
+                <p className="admin-helper-text">Remove a student from this batch if needed.</p>
+                {batchStudents.length === 0 ? (
+                  <div className="admin-empty admin-compact-empty">
+                    <p>No students assigned yet.</p>
+                  </div>
+                ) : (
+                  <div className="admin-student-list">
+                    {batchStudents.map((student) => (
+                      <div key={student._id} className="admin-student-row">
+                        <div>
+                          <strong>{student.name}</strong>
+                          <div className="admin-helper-text">{student.email}</div>
+                        </div>
+                        <button
+                          className="btn-admin btn-admin-danger btn-admin-sm"
+                          disabled={studentActionId === student._id}
+                          onClick={() => handleStudentBatchUpdate(student._id, '')}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="admin-student-list-card">
+                <h4>Add Paid Students</h4>
+                <p className="admin-helper-text">Only paid students from the same course can be added.</p>
+                {availableStudents.length === 0 ? (
+                  <div className="admin-empty admin-compact-empty">
+                    <p>No eligible students available.</p>
+                  </div>
+                ) : (
+                  <div className="admin-student-list">
+                    {availableStudents.map((student) => (
+                      <div key={student._id} className="admin-student-row">
+                        <div>
+                          <strong>{student.name}</strong>
+                          <div className="admin-helper-text">
+                            {student.email}
+                            {student.batchName ? ` - currently in ${student.batchName}` : ''}
+                          </div>
+                        </div>
+                        <button
+                          className="btn-admin btn-admin-primary btn-admin-sm"
+                          disabled={studentActionId === student._id}
+                          onClick={() => handleStudentBatchUpdate(student._id, managingBatch._id)}
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="admin-modal-footer">
+              <button className="btn-admin" onClick={() => setManagingBatch(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1019,8 +1137,7 @@ function EnrollmentSection() {
       <div className="admin-table-header">
         <div>
           <h3>{data.length} records</h3>
-          <p className="admin-helper-text">Paid student ko classroom access tab milega jab uske enrollment ko same course ke batch se assign kiya jayega.</p>
-        </div>
+         </div>
       </div>
       {data.length === 0 ? (
         <div className="admin-empty">

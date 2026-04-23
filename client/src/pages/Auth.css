@@ -111,6 +111,10 @@
   border-top: 1px solid var(--border-light);
 }
 
+.auth-reset-box .form-group {
+  margin-bottom: 18px;
+}
+
 .auth-reset-box h3 {
   font-size: 18px;
   font-weight: 700;
@@ -127,7 +131,14 @@
 
 .auth-inline-row {
   display: flex;
+  align-items: stretch;
   gap: 10px;
+}
+
+.auth-inline-row .btn {
+  min-width: 126px;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .auth-info-box {
@@ -282,5 +293,9 @@
 
   .auth-inline-row {
     flex-direction: column;
+  }
+
+  .auth-inline-row .btn {
+    width: 100%;
   }
 }
