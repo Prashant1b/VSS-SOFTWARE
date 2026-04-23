@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { FiCalendar, FiClock, FiExternalLink, FiPlayCircle, FiRadio, FiRefreshCw, FiVideo } from 'react-icons/fi'
+import { FiCalendar, FiClock, FiExternalLink, FiPlayCircle, FiRadio, FiRefreshCw, FiVideo, FiX } from 'react-icons/fi'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
 import './Classroom.css'
@@ -50,6 +50,8 @@ export default function Classroom() {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
+  const [openRecordingId, setOpenRecordingId] = useState('')
+  const recordingOverlayRef = useRef(null)
 
   const loadClassroom = async (silent = false) => {
     if (!silent) {
@@ -79,6 +81,30 @@ export default function Classroom() {
     return () => window.clearInterval(intervalId)
   }, [courseSlug])
 
+  useEffect(() => {
+    setOpenRecordingId('')
+  }, [courseSlug, data?.recordedClasses?.length])
+
+  useEffect(() => {
+    if (!openRecordingId) {
+      document.body.style.overflow = ''
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {})
+      }
+      return
+    }
+
+    document.body.style.overflow = 'hidden'
+    const element = recordingOverlayRef.current
+    if (element?.requestFullscreen && !document.fullscreenElement) {
+      element.requestFullscreen().catch(() => {})
+    }
+
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [openRecordingId])
+
   if (!user) return null
   if (user.role === 'teacher') return <Navigate to="/teacher" replace />
 
@@ -86,8 +112,48 @@ export default function Classroom() {
     return <div className="loading-page"><span className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }} /></div>
   }
 
+  const openRecording = data?.recordedClasses?.find((item) => item._id === openRecordingId) || null
+
   return (
     <div className="classroom-page page-enter">
+      {openRecording && (
+        <div className="classroom-recording-overlay" ref={recordingOverlayRef}>
+          <div className="classroom-recording-modal">
+            <div className="classroom-recording-header">
+              <div>
+                <span className="section-label">Recorded Session</span>
+                <h2>{openRecording.title}</h2>
+                <p>{openRecording.description || 'Recorded lesson details will appear here.'}</p>
+              </div>
+              <button type="button" className="btn btn-outline classroom-recording-close" onClick={() => setOpenRecordingId('')}>
+                <FiX size={16} /> Close
+              </button>
+            </div>
+            <div className="classroom-player classroom-player-modal">
+              {isDirectVideo(openRecording.recordingUrl) ? (
+                <video
+                  controls
+                  autoPlay
+                  controlsList="nodownload noplaybackrate noremoteplayback"
+                  disablePictureInPicture
+                  disableRemotePlayback
+                  playsInline
+                  preload="metadata"
+                  src={openRecording.recordingUrl}
+                  onContextMenu={(event) => event.preventDefault()}
+                />
+              ) : (
+                <iframe
+                  src={getEmbedUrl(openRecording.recordingUrl)}
+                  title={`${openRecording.title} recording`}
+                  allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                  allowFullScreen
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="container">
         <div className="classroom-hero">
           <div>
@@ -170,22 +236,19 @@ export default function Classroom() {
                       <span><FiClock size={14} /> {item.durationMinutes || 0} mins</span>
                     </div>
                     <div className="classroom-links">
-                      {item.recordingUrl && <a href={item.recordingUrl} target="_blank" rel="noreferrer">Watch Recording <FiExternalLink size={14} /></a>}
                       {item.notesUrl && <a href={item.notesUrl} target="_blank" rel="noreferrer">Notes <FiExternalLink size={14} /></a>}
                     </div>
                     {item.recordingUrl && (
-                      <div className="classroom-player">
-                        {isDirectVideo(item.recordingUrl) ? (
-                          <video controls playsInline src={item.recordingUrl} />
-                        ) : (
-                          <iframe
-                            src={getEmbedUrl(item.recordingUrl)}
-                            title={`${item.title} recording`}
-                            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                            allowFullScreen
-                          />
-                        )}
-                      </div>
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn-outline"
+                          style={{ marginTop: 16 }}
+                          onClick={() => setOpenRecordingId(item._id)}
+                        >
+                          View Now
+                        </button>
+                      </>
                     )}
                   </div>
                 ))}

@@ -19,20 +19,14 @@ export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const getHomeByRole = (user) => {
-    if (user.role === 'admin') return '/admin'
-    if (user.role === 'teacher') return '/teacher'
-    return '/dashboard'
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSuccess('')
     setLoading(true)
     try {
-      const data = await login(form.email, form.password)
-      navigate(getHomeByRole(data.user))
+      await login(form.email, form.password)
+      navigate('/')
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.')
     } finally {

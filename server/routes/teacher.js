@@ -6,6 +6,7 @@ import {
   getTeacherCourses,
   getTeacherBatches,
   getTeacherClassesIndex,
+  createRecordingUploadSignature,
   createTeacherBatch,
   updateTeacherBatch,
   deleteTeacherBatch,
@@ -26,6 +27,7 @@ router.get('/overview', getTeacherOverview);
 router.get('/courses', getTeacherCourses);
 router.get('/batches', getTeacherBatches);
 router.get('/classes', getTeacherClassesIndex);
+router.post('/recordings/signature', createRecordingUploadSignature);
 router.post('/batches', createTeacherBatch);
 router.put('/batches/:id', updateTeacherBatch);
 router.delete('/batches/:id', deleteTeacherBatch);

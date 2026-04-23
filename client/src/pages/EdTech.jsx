@@ -455,7 +455,7 @@ export default function EdTech() {
                   <div className="course-access-card">
                     <span className="course-access-badge">Enrolled</span>
                     <h4>Your access is active</h4>
-                    <p>This course is already unlocked for your account. Ab aap directly classroom open kar sakte hain.</p>
+                    <p>This course is already unlocked for your account. You can open the classroom directly.</p>
                     <div className="course-access-meta">
                       <span><FiAward size={14} /> Paid enrollment confirmed</span>
                       {courseState.enrollment?.paidAt && (

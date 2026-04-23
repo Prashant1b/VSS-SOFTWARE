@@ -2,6 +2,7 @@ import Batch from '../models/Batch.js';
 import ClassSession from '../models/ClassSession.js';
 import Course from '../models/Course.js';
 import Enrollment from '../models/Enrollment.js';
+import { getCloudinaryConfig, signCloudinaryUpload } from '../config/cloudinary.js';
 import { createLiveKitToken, getLiveKitConfig, getLiveKitRoomClient } from '../config/livekit.js';
 
 const teacherScope = (user) => (user.role === 'admin' ? {} : { teacher: user._id });
@@ -13,6 +14,12 @@ const normalizeDate = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 };
+
+const toSafePublicId = (value) => String(value || '')
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9-_]+/g, '-')
+  .replace(/^-+|-+$/g, '') || 'class-recording';
 
 export const getTeacherOverview = async (req, res) => {
   try {
@@ -174,6 +181,41 @@ export const getTeacherClassesIndex = async (req, res) => {
       .filter((item) => item.batchDetails || req.user.role === 'admin');
 
     res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const createRecordingUploadSignature = async (req, res) => {
+  try {
+    const item = await ClassSession.findOne({ _id: req.body.classId, ...teacherEditableScope(req.user) }).select('_id title courseSlug');
+    if (!item) {
+      return res.status(404).json({ success: false, message: 'Class not found' });
+    }
+
+    const { cloudName, apiKey } = getCloudinaryConfig();
+    const timestamp = Math.floor(Date.now() / 1000);
+    const folder = `vss-software/class-recordings/${item.courseSlug}`;
+    const publicId = `${toSafePublicId(item.title)}-${item._id}-${timestamp}`;
+    const paramsToSign = {
+      folder,
+      public_id: publicId,
+      timestamp,
+    };
+
+    const signature = signCloudinaryUpload(paramsToSign);
+
+    res.json({
+      success: true,
+      data: {
+        cloudName,
+        apiKey,
+        timestamp,
+        folder,
+        publicId,
+        signature,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

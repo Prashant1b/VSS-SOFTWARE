@@ -65,7 +65,10 @@ export const getCourseClassroom = async (req, res) => {
     const now = Date.now();
 
     const liveClasses = sessions.filter((item) => item.sessionType === 'live' && (!item.scheduledFor || new Date(item.scheduledFor).getTime() >= now - 2 * 60 * 60 * 1000));
-    const recordedClasses = sessions.filter((item) => item.sessionType === 'recorded');
+    const recordedClasses = sessions.filter((item) =>
+      item.sessionType === 'recorded'
+      || (item.sessionType === 'live' && item.recordingUrl && item.liveStatus === 'ended')
+    );
 
     res.json({
       success: true,

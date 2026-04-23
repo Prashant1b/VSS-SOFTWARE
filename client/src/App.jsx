@@ -57,7 +57,7 @@ function AdminRoute({ children }) {
 function GuestRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return <div className="loading-page"><span className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }} /></div>
-  if (user) return <Navigate to={getDefaultRoute(user)} replace />
+  if (user) return <Navigate to="/" replace />
   return children
 }
 
