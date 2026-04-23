@@ -341,3 +341,33 @@ export const endTeacherLiveClass = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const removeLiveParticipant = async (req, res) => {
+  try {
+    const scope = teacherEditableScope(req.user);
+    const item = await ClassSession.findOne({ _id: req.params.id, ...scope });
+    if (!item || item.sessionType !== 'live') {
+      return res.status(404).json({ success: false, message: 'Live class not found' });
+    }
+
+    const roomName = buildRoomName(item);
+    const identity = decodeURIComponent(String(req.params.identity || ''));
+    if (!identity) {
+      return res.status(400).json({ success: false, message: 'Participant identity is required' });
+    }
+
+    const roomClient = getLiveKitRoomClient();
+    const participant = await roomClient.getParticipant(roomName, identity);
+    const metadata = JSON.parse(participant.metadata || '{}');
+
+    if (['teacher', 'admin'].includes(metadata.appRole)) {
+      return res.status(403).json({ success: false, message: 'Teacher or admin cannot be removed from here' });
+    }
+
+    await roomClient.removeParticipant(roomName, identity);
+
+    res.json({ success: true, message: 'Student removed from live room' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

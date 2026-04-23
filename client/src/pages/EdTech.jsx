@@ -464,7 +464,7 @@ export default function EdTech() {
                     </div>
                     {!courseState.enrollment?.batchId && (
                       <div className="course-scheduled-note">
-                        <strong>Batch pending:</strong> Payment is complete, but an admin still needs to assign your enrollment to the correct batch from <code>Admin Panel -&gt; Enrollments</code>.
+                        <strong>Batch pending:</strong> Payment is complete, but Batch is not assgined.
                       </div>
                     )}
                     {courseState.enrollment?.demoVideoUrl && (
