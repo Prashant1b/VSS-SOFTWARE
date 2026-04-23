@@ -15,6 +15,7 @@ import {
   deleteTeacherClass,
   startTeacherLiveClass,
   endTeacherLiveClass,
+  removeLiveParticipant,
 } from '../Controller/teacherController.js';
 
 const router = express.Router();
@@ -34,5 +35,6 @@ router.put('/classes/:id', updateTeacherClass);
 router.delete('/classes/:id', deleteTeacherClass);
 router.post('/classes/:id/live/start', startTeacherLiveClass);
 router.post('/classes/:id/live/end', endTeacherLiveClass);
+router.delete('/classes/:id/live/participants/:identity', removeLiveParticipant);
 
 export default router;

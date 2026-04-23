@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Room, RoomEvent, Track } from 'livekit-client'
-import { FiMessageSquare, FiMic, FiMicOff, FiMonitor, FiPhoneOff, FiSend, FiUsers, FiVideo, FiVideoOff, FiX } from 'react-icons/fi'
+import { FiMaximize, FiMessageSquare, FiMic, FiMicOff, FiMonitor, FiPhoneOff, FiSend, FiTrash2, FiUsers, FiVideo, FiVideoOff, FiVolume2, FiX } from 'react-icons/fi'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
 import './LiveClassroom.css'
@@ -38,6 +38,15 @@ function readStoredMessages(classId) {
 
 function getPublishedTrack(publication) {
   return publication?.track || publication?.videoTrack || publication?.audioTrack || null
+}
+
+function getParticipantRole(participant) {
+  try {
+    const parsed = JSON.parse(participant?.metadata || '{}')
+    return parsed?.appRole || 'student'
+  } catch {
+    return 'student'
+  }
 }
 
 function TrackView({ track, label, muted = false, className = '' }) {
@@ -87,7 +96,10 @@ function collectParticipants(room, isConnected) {
         sid: participant.sid || participant.identity,
         identity: participant.identity,
         name: participant.name || participant.identity,
+        role: getParticipantRole(participant),
         isLocal: participant.isLocal,
+        isSpeaking: Boolean(participant.isSpeaking),
+        audioLevel: Number(participant.audioLevel || 0),
         videoTracks: videoTrackPubs.map((pub) => getPublishedTrack(pub)).filter(Boolean),
         audioTracks: Array.from(participant.audioTrackPublications.values()).map((pub) => getPublishedTrack(pub)).filter(Boolean),
         screenTrack: getPublishedTrack(screenPublication),
@@ -95,6 +107,14 @@ function collectParticipants(room, isConnected) {
       }
     })
     .filter((participant) => participant.identity)
+}
+
+function sortBySpeaking(participants) {
+  return [...participants].sort((a, b) => {
+    if (a.isSpeaking && !b.isSpeaking) return -1
+    if (!a.isSpeaking && b.isSpeaking) return 1
+    return (b.audioLevel || 0) - (a.audioLevel || 0)
+  })
 }
 
 export default function LiveClassroom() {
@@ -109,11 +129,16 @@ export default function LiveClassroom() {
   const [cameraOn, setCameraOn] = useState(false)
   const [micOn, setMicOn] = useState(false)
   const [screenOn, setScreenOn] = useState(false)
+  const [micLevel, setMicLevel] = useState(0)
   const [chatInput, setChatInput] = useState('')
   const [messages, setMessages] = useState([])
   const [connectionState, setConnectionState] = useState('disconnected')
   const [hasConnectedOnce, setHasConnectedOnce] = useState(false)
+  const [removingIdentity, setRemovingIdentity] = useState('')
+  const [showStudentList, setShowStudentList] = useState(false)
   const roomRef = useRef(null)
+  const chatMessagesRef = useRef(null)
+  const mediaStageRef = useRef(null)
 
   useEffect(() => {
     let activeRoom
@@ -142,6 +167,7 @@ export default function LiveClassroom() {
         roomInstance
           .on(RoomEvent.ParticipantConnected, bump)
           .on(RoomEvent.ParticipantDisconnected, bump)
+          .on(RoomEvent.ActiveSpeakersChanged, bump)
           .on(RoomEvent.TrackSubscribed, bump)
           .on(RoomEvent.TrackUnsubscribed, bump)
           .on(RoomEvent.LocalTrackPublished, bump)
@@ -226,14 +252,33 @@ export default function LiveClassroom() {
     }
   }, [classId, messages])
 
+  useEffect(() => {
+    const container = chatMessagesRef.current
+    if (!container) return
+
+    container.scrollTop = container.scrollHeight
+  }, [messages])
+
   const isConnected = connectionState === 'connected'
   const hasJoinedRoom = Boolean((isConnected || hasConnectedOnce) && room)
   const participants = useMemo(() => collectParticipants(room, isConnected), [room, isConnected, version])
   const selfParticipant = useMemo(() => participants.find((participant) => participant.isLocal) || null, [participants])
   const remoteParticipants = useMemo(() => participants.filter((participant) => !participant.isLocal), [participants])
+  const instructorParticipants = useMemo(
+    () => participants.filter((participant) => ['teacher', 'admin'].includes(participant.role)),
+    [participants]
+  )
   const presenterParticipants = useMemo(
     () => participants.filter((participant) => participant.screenTrack || participant.cameraTrack || participant.videoTracks.length > 0),
     [participants]
+  )
+  const joinedStudents = useMemo(
+    () => participants.filter((participant) => participant.role === 'student' && !participant.isLocal),
+    [participants]
+  )
+  const instructorPresenters = useMemo(
+    () => instructorParticipants.filter((participant) => participant.screenTrack || participant.cameraTrack || participant.videoTracks.length > 0),
+    [instructorParticipants]
   )
 
   const remoteAudioTracks = useMemo(
@@ -254,6 +299,71 @@ export default function LiveClassroom() {
 
     return null
   }, [participants])
+
+  useEffect(() => {
+    if (!room || !isConnected || !info?.livekit?.canPublish || !micOn) {
+      setMicLevel(0)
+      return undefined
+    }
+
+    const publication = Array.from(room.localParticipant.audioTrackPublications.values())[0]
+    const track = getPublishedTrack(publication)
+    const mediaStreamTrack = track?.mediaStreamTrack
+
+    if (!mediaStreamTrack) {
+      setMicLevel(0)
+      return undefined
+    }
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext
+    if (!AudioContextClass) {
+      setMicLevel(0)
+      return undefined
+    }
+
+    const audioContext = new AudioContextClass()
+    const analyser = audioContext.createAnalyser()
+    analyser.fftSize = 256
+    analyser.smoothingTimeConstant = 0.8
+
+    const source = audioContext.createMediaStreamSource(new MediaStream([mediaStreamTrack]))
+    source.connect(analyser)
+
+    const samples = new Uint8Array(analyser.frequencyBinCount)
+    let frameId
+
+    const tick = async () => {
+      if (audioContext.state === 'suspended') {
+        try {
+          await audioContext.resume()
+        } catch {
+          // Ignore resume errors and keep the meter off.
+        }
+      }
+
+      analyser.getByteTimeDomainData(samples)
+
+      let peak = 0
+      for (let i = 0; i < samples.length; i += 1) {
+        peak = Math.max(peak, Math.abs(samples[i] - 128) / 128)
+      }
+
+      setMicLevel(Math.min(1, peak * 2.4))
+      frameId = window.requestAnimationFrame(tick)
+    }
+
+    tick()
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId)
+      }
+      source.disconnect()
+      analyser.disconnect()
+      audioContext.close().catch(() => {})
+      setMicLevel(0)
+    }
+  }, [room, isConnected, info?.livekit?.canPublish, micOn, version])
 
   const toggleCamera = async () => {
     if (!room || !info?.livekit?.canPublish || !isConnected) return
@@ -347,17 +457,49 @@ export default function LiveClassroom() {
     navigate(`/my-learning/${info?.classSession?.courseSlug || ''}`)
   }
 
+  const handleFullscreen = async () => {
+    const element = mediaStageRef.current
+    if (!element) return
+
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+        return
+      }
+
+      await element.requestFullscreen()
+    } catch {
+      setError('Unable to switch fullscreen right now.')
+    }
+  }
+
+  const handleRemoveParticipant = async (participant) => {
+    if (!info?.livekit?.canPublish) return
+    if (!window.confirm(`Remove ${participant.name} from this live class?`)) return
+
+    setRemovingIdentity(participant.identity)
+    try {
+      await api.delete(`/teacher/classes/${classId}/live/participants/${encodeURIComponent(participant.identity)}`, { withCredentials: true })
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to remove this student right now.')
+    } finally {
+      setRemovingIdentity('')
+    }
+  }
+
   if (!user) return null
 
   const isPresentationMode = !!activeScreenShare
   const hasRemoteParticipants = remoteParticipants.length > 0
   const isStudentView = !info?.livekit?.canPublish
-  const visibleParticipants = isStudentView
-    ? presenterParticipants
-    : (isPresentationMode ? participants : (hasRemoteParticipants ? participants : (selfParticipant ? [selfParticipant] : [])))
+  const instructorVisibleParticipants = isPresentationMode ? instructorParticipants : instructorPresenters
+  const visibleParticipantsBase = isStudentView
+    ? (isPresentationMode ? instructorParticipants : instructorPresenters)
+    : (instructorVisibleParticipants.length > 0 ? instructorVisibleParticipants : (selfParticipant ? [selfParticipant] : []))
+  const visibleParticipants = useMemo(() => sortBySpeaking(visibleParticipantsBase), [visibleParticipantsBase])
   const showWaitingNotice = isStudentView
     ? hasJoinedRoom && visibleParticipants.length === 0
-    : hasJoinedRoom && !hasRemoteParticipants
+    : hasJoinedRoom && instructorVisibleParticipants.length === 0
 
   return (
     <div className="live-classroom-page page-enter">
@@ -403,6 +545,18 @@ export default function LiveClassroom() {
                 <span><FiUsers size={14} /> {isStudentView ? visibleParticipants.length : remoteParticipants.length} Remote Participants</span>
                 <span><FiMessageSquare size={14} /> Private batch room</span>
                 <span>{isConnected ? 'Connected' : 'Connecting'}</span>
+                <button type="button" className="live-panel-action" onClick={handleFullscreen}>
+                  <FiMaximize size={13} /> Full Screen
+                </button>
+                {info?.livekit?.canPublish && (
+                  <button
+                    type="button"
+                    className={`live-panel-action ${showStudentList ? 'active' : ''}`}
+                    onClick={() => setShowStudentList((value) => !value)}
+                  >
+                    <FiUsers size={13} /> Students ({joinedStudents.length})
+                  </button>
+                )}
                 {isPresentationMode && (
                   <span className="live-screen-badge">
                     <FiMonitor size={13} /> {activeScreenShare.isLocal ? 'You are presenting' : `${activeScreenShare.name} is presenting`}
@@ -411,12 +565,20 @@ export default function LiveClassroom() {
                 {isStudentView && (
                   <span className="live-student-mode-badge">Students can only watch and listen</span>
                 )}
+                {info?.livekit?.canPublish && (
+                  <span className={`live-mic-meter-badge ${micOn ? 'active' : ''}`}>
+                    <FiMic size={13} /> Mic Test
+                    <i aria-hidden="true">
+                      <b style={{ transform: `scaleX(${Math.max(0.08, micLevel)})` }} />
+                    </i>
+                  </span>
+                )}
               </div>
               {showWaitingNotice && (
                 <p className="live-panel-note">
                   {isStudentView
                     ? 'Teacher stream abhi live nahi dikh raha. Jaise hi teacher camera ya screen share start karega, yahan class stream appear ho jayegi.'
-                    : 'You are alone in the room right now. Your preview and controls stay active so you can test camera, mic, and screen share before others join.'}
+                    : 'Main stage par sirf teacher ya admin hi dikhenge. Student names upar ke Students button se dekhe ja sakte hain.'}
                 </p>
               )}
             </div>
@@ -424,7 +586,7 @@ export default function LiveClassroom() {
             {!hasJoinedRoom ? (
               <div className="live-classroom-empty">Connecting you to the live room...</div>
             ) : isPresentationMode ? (
-              <div className="live-presentation-layout">
+              <div className="live-presentation-layout" ref={mediaStageRef}>
                 <div className="live-screen-main">
                   <TrackView
                     track={activeScreenShare.track}
@@ -434,16 +596,20 @@ export default function LiveClassroom() {
 
                 <div className="live-camera-strip">
                   {visibleParticipants.map((participant) => (
-                    <div key={participant.sid} className="live-camera-pip">
+                    <div key={participant.sid} className={`live-camera-pip ${participant.isSpeaking ? 'is-speaking' : ''}`}>
                       {participant.cameraTrack ? (
                         <TrackView
                           track={participant.cameraTrack}
                           label={participant.isLocal ? 'You' : participant.name}
+                          className={participant.isSpeaking ? 'is-speaking' : ''}
                         />
                       ) : (
-                        <div className="live-avatar-pip">
+                        <div className={`live-avatar-pip ${participant.isSpeaking ? 'is-speaking' : ''}`}>
                           <strong>{participant.name?.charAt(0)?.toUpperCase() || 'U'}</strong>
                           <span>{participant.isLocal ? 'You' : participant.name}</span>
+                          {participant.isSpeaking && (
+                            <em className="live-speaking-chip"><FiVolume2 size={11} /> Speaking</em>
+                          )}
                         </div>
                       )}
                     </div>
@@ -451,19 +617,26 @@ export default function LiveClassroom() {
                 </div>
               </div>
             ) : (
-              <div className="live-classroom-grid">
+              <div className="live-classroom-grid" ref={mediaStageRef}>
                 {visibleParticipants.map((participant) => (
-                  <div key={participant.sid} className="live-participant-card">
+                  <div key={participant.sid} className={`live-participant-card ${participant.isSpeaking ? 'is-speaking' : ''}`}>
                     {participant.videoTracks.length > 0 ? (
                       <TrackView
                         track={participant.cameraTrack || participant.videoTracks[0]}
                         label={participant.isLocal ? `${participant.name} (You)` : participant.name}
+                        className={participant.isSpeaking ? 'is-speaking' : ''}
                       />
                     ) : (
-                      <div className="live-avatar-card">
+                      <div className={`live-avatar-card ${participant.isSpeaking ? 'is-speaking' : ''}`}>
                         <strong>{participant.name?.charAt(0)?.toUpperCase() || 'U'}</strong>
                         <span>{participant.isLocal ? `${participant.name} (You)` : participant.name}</span>
+                        {participant.isSpeaking && (
+                          <em className="live-speaking-chip"><FiVolume2 size={11} /> Speaking</em>
+                        )}
                       </div>
+                    )}
+                    {participant.isSpeaking && participant.videoTracks.length > 0 && (
+                      <span className="live-speaking-banner"><FiVolume2 size={13} /> Speaking Now</span>
                     )}
                   </div>
                 ))}
@@ -472,11 +645,39 @@ export default function LiveClassroom() {
           </div>
 
           <aside className="live-chat-panel">
+            {info?.livekit?.canPublish && showStudentList && (
+              <div className="live-participant-manager">
+                <div className="live-chat-header">
+                  <h2>Joined Students</h2>
+                  <p>Teacher and admin can see logged-in student names and remove them from the live room.</p>
+                </div>
+                <div className="live-participant-list">
+                  {joinedStudents.length === 0 ? (
+                    <div className="live-chat-empty">No students have joined the live room yet.</div>
+                  ) : joinedStudents.map((participant) => (
+                    <div key={participant.sid} className="live-participant-row">
+                      <div>
+                        <strong>{participant.name}</strong>
+                        <small>{participant.identity}</small>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-outline live-remove-btn"
+                        disabled={removingIdentity === participant.identity}
+                        onClick={() => handleRemoveParticipant(participant)}
+                      >
+                        <FiTrash2 size={13} /> {removingIdentity === participant.identity ? 'Removing...' : 'Remove'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="live-chat-header">
               <h2>Class Chat</h2>
               <p>Use chat for questions, updates, and session communication.</p>
             </div>
-            <div className="live-chat-messages">
+            <div className="live-chat-messages" ref={chatMessagesRef}>
               {messages.length === 0 ? (
                 <div className="live-chat-empty">Messages shared during the live session will appear here.</div>
               ) : messages.map((message) => (

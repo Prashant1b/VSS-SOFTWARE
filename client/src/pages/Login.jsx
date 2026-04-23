@@ -43,6 +43,12 @@ export default function Login() {
   const handleSendResetOtp = async () => {
     setError('')
     setSuccess('')
+
+    if (!resetForm.email) {
+      setError('Please enter your email first')
+      return
+    }
+
     setSendingResetOtp(true)
 
     try {
@@ -63,6 +69,16 @@ export default function Login() {
     event.preventDefault()
     setError('')
     setSuccess('')
+
+    if (!resetOtpSent) {
+      handleSendResetOtp()
+      return
+    }
+
+    if (!resetForm.otp.trim()) {
+      setError('Please enter the OTP sent to your email')
+      return
+    }
 
     if (resetForm.newPassword.length < 6) {
       setError('New password must be at least 6 characters')
@@ -234,6 +250,7 @@ export default function Login() {
                   setError('')
                   setSuccess('')
                   setResetOtpSent(false)
+                  setResetForm({ email: '', otp: '', newPassword: '', confirmPassword: '' })
                 }}
               >
                 Back to login
