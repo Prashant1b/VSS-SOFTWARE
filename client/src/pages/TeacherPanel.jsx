@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import axios from 'axios'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import {
   FiBookOpen,
@@ -31,6 +32,12 @@ const emptyClassForm = {
   isPublished: true,
 }
 
+const emptyRecordingUploadState = {
+  fileName: '',
+  progress: 0,
+  uploading: false,
+}
+
 export default function TeacherPanel() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -42,6 +49,7 @@ export default function TeacherPanel() {
   const [editingClassId, setEditingClassId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [savingClass, setSavingClass] = useState(false)
+  const [recordingUpload, setRecordingUpload] = useState(emptyRecordingUploadState)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
   const [batchSearch, setBatchSearch] = useState('')
 
@@ -123,6 +131,7 @@ export default function TeacherPanel() {
 
       setClassForm({ ...emptyClassForm, batchId: selectedBatchId || '' })
       setEditingClassId(null)
+      setRecordingUpload(emptyRecordingUploadState)
       setFeedback({ type: 'success', message: 'Class saved successfully.' })
       await loadDashboard(selectedBatchId)
     } catch (error) {
@@ -134,6 +143,7 @@ export default function TeacherPanel() {
 
   const handleEditClass = (item) => {
     setEditingClassId(item._id)
+    setRecordingUpload(emptyRecordingUploadState)
     setClassForm({
       batchId: item.batch || selectedBatchId,
       title: item.title || '',
@@ -154,9 +164,57 @@ export default function TeacherPanel() {
       await api.delete(`/teacher/classes/${classId}`, { withCredentials: true })
       setClassForm({ ...emptyClassForm, batchId: selectedBatchId || '' })
       setEditingClassId(null)
+      setRecordingUpload(emptyRecordingUploadState)
       await loadDashboard(selectedBatchId)
     } catch (error) {
       setFeedback({ type: 'error', message: error.response?.data?.message || 'Unable to delete class.' })
+    }
+  }
+
+  const handleRecordingFileSelected = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!editingClassId) {
+      setFeedback({ type: 'error', message: 'Please create the class first, then click edit to upload its recording.' })
+      event.target.value = ''
+      return
+    }
+
+    setFeedback({ type: '', message: '' })
+    setRecordingUpload({ fileName: file.name, progress: 0, uploading: true })
+
+    try {
+      const signatureRes = await api.post('/teacher/recordings/signature', { classId: editingClassId }, { withCredentials: true })
+      const { cloudName, apiKey, timestamp, folder, publicId, signature } = signatureRes.data.data
+
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('api_key', apiKey)
+      formData.append('timestamp', String(timestamp))
+      formData.append('folder', folder)
+      formData.append('public_id', publicId)
+      formData.append('signature', signature)
+
+      const uploadRes = await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          const total = progressEvent.total || file.size || 1
+          const progress = Math.min(100, Math.round((progressEvent.loaded * 100) / total))
+          setRecordingUpload((current) => ({ ...current, progress }))
+        },
+      })
+
+      const secureUrl = uploadRes.data.secure_url || uploadRes.data.url || ''
+      setClassForm((current) => ({ ...current, recordingUrl: secureUrl }))
+      setRecordingUpload({ fileName: file.name, progress: 100, uploading: false })
+      setFeedback({ type: 'success', message: 'Recording uploaded to Cloudinary. Click Update Class to save it for students.' })
+    } catch (error) {
+      setRecordingUpload(emptyRecordingUploadState)
+      const cloudinaryMessage = error.response?.data?.error?.message
+      setFeedback({ type: 'error', message: cloudinaryMessage || error.response?.data?.message || 'Recording upload failed. Please verify your Cloudinary configuration.' })
+    } finally {
+      event.target.value = ''
     }
   }
 
@@ -291,12 +349,27 @@ export default function TeacherPanel() {
                     <label>Description</label>
                     <textarea value={classForm.description} onChange={(event) => setClassForm({ ...classForm, description: event.target.value })} />
                   </div>
-                  {classForm.sessionType === 'recorded' && (
-                    <div className="form-group">
-                      <label>Recorded Video URL</label>
-                      <input value={classForm.recordingUrl} onChange={(event) => setClassForm({ ...classForm, recordingUrl: event.target.value })} placeholder="https://youtube.com/... or direct mp4/hls" />
+                  <div className="form-group">
+                    <label>Recorded Video URL</label>
+                    <input value={classForm.recordingUrl} onChange={(event) => setClassForm({ ...classForm, recordingUrl: event.target.value })} placeholder="Cloudinary playback URL or direct mp4/hls URL" />
+                  </div>
+                  <div className="form-group">
+                    <label>Upload Recording File</label>
+                    <div className="teacher-upload-row">
+                      <input type="file" accept="video/*" onChange={handleRecordingFileSelected} disabled={!editingClassId || recordingUpload.uploading} />
+                      <span className="teacher-upload-help">
+                        {editingClassId
+                          ? 'Upload a video file directly to Cloudinary for this class.'
+                          : 'Create the class first, then click Edit to upload its recording file.'}
+                      </span>
                     </div>
-                  )}
+                    {recordingUpload.fileName && (
+                      <div className="teacher-upload-status">
+                        <strong>{recordingUpload.fileName}</strong>
+                        <span>{recordingUpload.uploading ? `Uploading ${recordingUpload.progress}%` : `Uploaded ${recordingUpload.progress}%`}</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="form-group">
                     <label>Notes / Docs URL</label>
                     <input value={classForm.notesUrl} onChange={(event) => setClassForm({ ...classForm, notesUrl: event.target.value })} placeholder="https://drive.google.com/..." />
@@ -310,7 +383,7 @@ export default function TeacherPanel() {
                       {savingClass ? 'Saving...' : <><FiPlus size={16} /> {editingClassId ? 'Update Class' : 'Create Class'}</>}
                     </button>
                     {editingClassId && (
-                      <button className="btn btn-outline" type="button" onClick={() => { setEditingClassId(null); setClassForm({ ...emptyClassForm, batchId: selectedBatchId || '' }) }}>
+                      <button className="btn btn-outline" type="button" onClick={() => { setEditingClassId(null); setClassForm({ ...emptyClassForm, batchId: selectedBatchId || '' }); setRecordingUpload(emptyRecordingUploadState) }}>
                         Cancel
                       </button>
                     )}

@@ -141,11 +141,63 @@
   border: 1px solid rgba(10, 37, 64, 0.1);
 }
 
+.classroom-recording-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 0;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.classroom-recording-modal {
+  width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: auto;
+  padding: 28px;
+  border-radius: 0;
+  background: white;
+  box-shadow: none;
+}
+
+.classroom-recording-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.classroom-recording-header h2 {
+  font-size: 28px;
+  margin: 8px 0;
+}
+
+.classroom-recording-header p {
+  color: var(--text-secondary);
+  max-width: 760px;
+}
+
+.classroom-recording-close {
+  flex-shrink: 0;
+}
+
+.classroom-player-modal {
+  margin-top: 0;
+  height: calc(100vh - 170px);
+  min-height: 520px;
+}
+
 .classroom-player iframe,
 .classroom-player video {
   display: block;
   width: 100%;
   min-height: 320px;
+  height: 100%;
   border: none;
   background: #000;
 }
@@ -161,5 +213,23 @@
 
   .classroom-hero h1 {
     font-size: 28px;
+  }
+
+  .classroom-recording-overlay {
+    padding: 0;
+  }
+
+  .classroom-recording-modal {
+    padding: 16px;
+    max-height: 100vh;
+  }
+
+  .classroom-recording-header {
+    flex-direction: column;
+  }
+
+  .classroom-player-modal {
+    height: calc(100vh - 190px);
+    min-height: 320px;
   }
 }
