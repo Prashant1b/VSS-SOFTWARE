@@ -19,6 +19,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import AdminPanel from './pages/AdminPanel'
+import CourseDetail from './pages/CourseDetails'
 import TeacherPanel from './pages/TeacherPanel'
 import Classroom from './pages/Classroom'
 import LiveClassroom from './pages/LiveClassroom'
@@ -89,6 +90,7 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/resources" element={<Resources />} />
+          <Route path="/courses/:slug" element={<CourseDetail />} />
           <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
           <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
