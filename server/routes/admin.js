@@ -37,6 +37,13 @@ import {
   deleteEnrollment,
   getRecruitments,
   deleteRecruitment,
+  getInternships,
+  updateInternship,
+  deleteInternship,
+  getInternshipDomains,
+  createInternshipDomain,
+  updateInternshipDomain,
+  deleteInternshipDomain,
   getBatches,
   createBatch,
   updateBatch,
@@ -97,5 +104,14 @@ router.delete('/enrollments/:id', deleteEnrollment);
 
 router.get('/recruitments', getRecruitments);
 router.delete('/recruitments/:id', deleteRecruitment);
+
+router.get('/internships', getInternships);
+router.patch('/internships/:id', updateInternship);
+router.delete('/internships/:id', deleteInternship);
+
+router.get('/internship-domains', getInternshipDomains);
+router.post('/internship-domains', createInternshipDomain);
+router.put('/internship-domains/:id', updateInternshipDomain);
+router.delete('/internship-domains/:id', deleteInternshipDomain);
 
 export default router;

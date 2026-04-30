@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   FiHome, FiUsers, FiBookOpen, FiMessageSquare, FiBriefcase,
-  FiBarChart2, FiStar, FiMail, FiFileText, FiArrowLeft, FiCalendar,
+  FiAward, FiBarChart2, FiStar, FiMail, FiFileText, FiArrowLeft, FiCalendar,
   FiPlus, FiEdit2, FiTrash2, FiX, FiMenu, FiCheckCircle, FiMonitor,
   FiAlertCircle, FiLogOut, FiShield, FiUserPlus,
 } from 'react-icons/fi'
@@ -16,6 +16,7 @@ const SECTIONS = [
   { key: 'courses', label: 'Courses', icon: <FiBookOpen size={18} /> },
   { key: 'batches', label: 'Batches', icon: <FiCalendar size={18} /> },
   { key: 'live-control', label: 'Live Classes', icon: <FiMonitor size={18} /> },
+  { key: 'internship-domains', label: 'Internship Domains', icon: <FiAward size={18} /> },
   { key: 'testimonials', label: 'Testimonials', icon: <FiMessageSquare size={18} /> },
   { key: 'hiring', label: 'Hiring Drives', icon: <FiBriefcase size={18} /> },
   { key: 'stats', label: 'Site Stats', icon: <FiBarChart2 size={18} /> },
@@ -23,6 +24,7 @@ const SECTIONS = [
   { key: 'users', label: 'Users', icon: <FiUsers size={18} />, section: 'Submissions' },
   { key: 'contacts', label: 'Contacts', icon: <FiMail size={18} /> },
   { key: 'enrollments', label: 'Enrollments', icon: <FiFileText size={18} /> },
+  { key: 'internships', label: 'Internships', icon: <FiAward size={18} /> },
   { key: 'recruitments', label: 'Recruitments', icon: <FiBriefcase size={18} /> },
 ]
 
@@ -79,6 +81,13 @@ const hiringFields = [
   { key: 'isActive', label: 'Active', type: 'checkbox' },
 ]
 
+const internshipDomainFields = [
+  { key: 'name', label: 'Domain Name', required: true, placeholder: 'e.g. AI and Machine Learning' },
+  { key: 'description', label: 'Description', type: 'textarea' },
+  { key: 'order', label: 'Display Order', type: 'number' },
+  { key: 'isActive', label: 'Active', type: 'checkbox' },
+]
+
 const statFields = [
   { key: 'key', label: 'Key (unique ID)', required: true, placeholder: 'e.g. students_placed' },
   { key: 'label', label: 'Display Label', required: true, placeholder: 'e.g. Students Placed' },
@@ -119,6 +128,39 @@ const enrollmentColumns = [
   { key: 'status', label: 'Status', render: (value) => <span className={`admin-badge ${value === 'paid' ? 'admin-badge-active' : 'admin-badge-student'}`}>{value || 'lead'}</span> },
   { key: 'institution', label: 'Institution' },
   { key: 'demoSlotAt', label: 'Demo Slot', render: (value) => value ? new Date(value).toLocaleString() : '-' },
+  { key: 'createdAt', label: 'Date', render: (value) => new Date(value).toLocaleDateString() },
+]
+
+const internshipColumns = [
+  { key: 'name', label: 'Name' },
+  { key: 'email', label: 'Email' },
+  { key: 'phone', label: 'Phone' },
+  { key: 'college', label: 'College' },
+  { key: 'track', label: 'Track' },
+  { key: 'duration', label: 'Duration' },
+  {
+    key: 'planType',
+    label: 'Plan',
+    render: (value) => {
+      const label = value === 'talent_free_review' ? 'Free after interview' : value
+      return <span className="admin-badge admin-badge-student">{label}</span>
+    },
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    render: (value) => <span className={`admin-badge ${value === 'paid' || value === 'interview_cleared' ? 'admin-badge-active' : 'admin-badge-student'}`}>{value}</span>,
+  },
+  {
+    key: 'amount',
+    label: 'Amount',
+    render: (value, item) => item.planType === 'paid' ? `Rs ${value || 699}` : 'Free',
+  },
+  {
+    key: 'interviewStatus',
+    label: 'Interview',
+    render: (value) => <span className={`admin-badge ${value === 'cleared' ? 'admin-badge-active' : value === 'rejected' ? 'admin-badge-inactive' : 'admin-badge-student'}`}>{value}</span>,
+  },
   { key: 'createdAt', label: 'Date', render: (value) => new Date(value).toLocaleDateString() },
 ]
 
@@ -207,6 +249,7 @@ export default function AdminPanel() {
           {activeSection === 'courses' && <CrudSection endpoint="courses" fields={courseFields} />}
           {activeSection === 'batches' && <BatchSection />}
           {activeSection === 'live-control' && <LiveClassesSection />}
+          {activeSection === 'internship-domains' && <CrudSection endpoint="internship-domains" fields={internshipDomainFields} />}
           {activeSection === 'testimonials' && <CrudSection endpoint="testimonials" fields={testimonialFields} />}
           {activeSection === 'hiring' && <CrudSection endpoint="hiring-drives" fields={hiringFields} />}
           {activeSection === 'stats' && <CrudSection endpoint="stats" fields={statFields} />}
@@ -214,6 +257,7 @@ export default function AdminPanel() {
           {activeSection === 'users' && <UsersSection />}
           {activeSection === 'contacts' && <ReadOnlySection endpoint="contacts" columns={contactColumns} canDelete />}
           {activeSection === 'enrollments' && <EnrollmentSection />}
+          {activeSection === 'internships' && <InternshipSection />}
           {activeSection === 'recruitments' && <ReadOnlySection endpoint="recruitments" columns={recruitmentColumns} canDelete />}
         </div>
       </div>
@@ -239,6 +283,8 @@ function DashboardSection() {
     { label: 'Contacts', value: stats?.contacts || 0, color: '#F0FDF4', iconColor: '#16A34A', icon: <FiMail size={20} /> },
     { label: 'Enrollments', value: stats?.enrollments || 0, color: '#FEF3C7', iconColor: '#D97706', icon: <FiFileText size={20} /> },
     { label: 'Recruitments', value: stats?.recruitments || 0, color: '#FDE2E2', iconColor: '#DC2626', icon: <FiBriefcase size={20} /> },
+    { label: 'Internships', value: stats?.internships || 0, color: '#ECFDF5', iconColor: '#00875A', icon: <FiAward size={20} /> },
+    { label: 'Internship Domains', value: stats?.internshipDomains || 0, color: '#EEF2FF', iconColor: '#0A2540', icon: <FiAward size={20} /> },
     { label: 'Placements', value: stats?.placements || 0, color: '#EDE9FE', iconColor: '#7C3AED', icon: <FiStar size={20} /> },
     { label: 'Courses', value: stats?.courses || 0, color: '#E0F2FE', iconColor: '#0284C7', icon: <FiBookOpen size={20} /> },
   ]
@@ -520,7 +566,7 @@ function ReadOnlySection({ endpoint, columns, canDelete, renderActions }) {
                 <tr key={item._id}>
                   {columns.map((column) => (
                     <td key={column.key} data-label={column.label}>
-                      {column.render ? column.render(item[column.key]) : (item[column.key] ?? '-')}
+                      {column.render ? column.render(item[column.key], item) : (item[column.key] ?? '-')}
                     </td>
                   ))}
                   {(canDelete || renderActions) && (
@@ -599,6 +645,47 @@ function UsersSection() {
           </>
         )
       }}
+    />
+  )
+}
+
+function InternshipSection() {
+  const [updatingId, setUpdatingId] = useState(null)
+
+  const handleInterviewChange = async (item, interviewStatus, refresh) => {
+    if (interviewStatus === item.interviewStatus) return
+    setUpdatingId(item._id)
+    try {
+      await api.patch(`/admin/internships/${item._id}`, { interviewStatus }, { withCredentials: true })
+      refresh()
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error updating interview status')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  return (
+    <ReadOnlySection
+      endpoint="internships"
+      columns={internshipColumns}
+      canDelete
+      renderActions={(item, refresh) => (
+        item.planType === 'talent_free_review' ? (
+          <select
+            className="admin-inline-select"
+            value={item.interviewStatus || 'pending'}
+            disabled={updatingId === item._id}
+            onChange={(event) => handleInterviewChange(item, event.target.value, refresh)}
+          >
+            <option value="pending">Interview Pending</option>
+            <option value="cleared">Cleared - Free Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        ) : (
+          <span className="admin-helper-text">No interview action</span>
+        )
+      )}
     />
   )
 }

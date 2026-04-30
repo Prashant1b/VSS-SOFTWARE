@@ -7,6 +7,7 @@ import ScrollToTop from './components/ScrollToTop'
 import WhatsAppButton from './components/WhatsAppButton'
 import Home from './pages/Home'
 import EdTech from './pages/EdTech'
+import Internship from './pages/Internship'
 import Staffing from './pages/Staffing'
 import AiSolutions from './pages/AiSolutions'
 import About from './pages/About'
@@ -83,6 +84,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/edtech" element={<EdTech />} />
+          <Route path="/internship" element={<Internship />} />
           <Route path="/staffing" element={<Staffing />} />
           <Route path="/ai-solutions" element={<AiSolutions />} />
           <Route path="/about" element={<About />} />

@@ -19,15 +19,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 18px;
   height: 68px;
 }
 
 /* Brand logo styles live in BrandLogo.css */
 
+.navbar .brand-logo {
+  flex: 0 0 auto;
+}
+
 .navbar-links {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 0;
 }
 
 .navbar-links li {
@@ -35,13 +43,18 @@
 }
 
 .nav-link {
-  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-secondary);
   border-radius: var(--radius-sm);
   transition: var(--transition);
   position: relative;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -67,14 +80,23 @@
 
 /* Right side */
 .nav-right-desktop {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .nav-callback-btn {
-  padding: 8px 18px;
+  min-height: 42px;
+  padding: 8px 14px;
   font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.nav-admin-link {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .nav-login-link {
@@ -89,6 +111,7 @@
 }
 
 .nav-avatar-btn {
+  flex: 0 0 36px;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -132,6 +155,9 @@
 
 @media (max-width: 1024px) {
   .navbar-links {
+    flex: initial;
+    min-width: initial;
+    justify-content: flex-start;
     position: fixed;
     top: 68px;
     right: 0;
