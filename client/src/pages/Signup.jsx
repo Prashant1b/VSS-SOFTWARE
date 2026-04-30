@@ -186,15 +186,8 @@ export default function Signup() {
                 />
               </div>
             </div>
-
-            <div className="auth-info-box">
-              New signups are created as <strong>Student</strong>. If you need an <strong>Employer</strong> or <strong>Teacher</strong> account, an admin can change your role later.
-            </div>
-
-            {/* ERROR */}
             {error && <div className="auth-error">{error}</div>}
 
-            {/* SUBMIT */}
             <button
               type="submit"
               className="btn btn-primary auth-submit"

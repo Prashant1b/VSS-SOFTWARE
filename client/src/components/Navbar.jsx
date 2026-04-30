@@ -9,6 +9,7 @@ import './Navbar.css'
 const navLinks = [
   { path: '/', label: 'Home' },
   { path: '/edtech', label: 'EdTech' },
+  { path: '/internship', label: 'Internship' },
   { path: '/staffing', label: 'Staffing' },
   { path: '/ai-solutions', label: 'AI Solutions' },
   { path: '/about', label: 'About' },
@@ -111,7 +112,7 @@ export default function Navbar() {
             {user ? (
               <>
                 {user.role === 'admin' && (
-                  <Link to="/admin" className="nav-link" title="Admin Panel" style={{ fontSize: 13, fontWeight: 600 }}>
+                  <Link to="/admin" className="nav-link nav-admin-link" title="Admin Panel">
                     <FiSettings size={14} /> Admin
                   </Link>
                 )}

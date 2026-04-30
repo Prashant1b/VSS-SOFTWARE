@@ -13,6 +13,7 @@ import adminRoutes from './routes/admin.js';
 import publicRoutes from './routes/public.js';
 import teacherRoutes from './routes/teacher.js';
 import classroomRoutes from './routes/classroom.js';
+import internshipRoutes from './routes/internship.js';
 import cookieParser from 'cookie-parser';
 dotenv.config();
 
@@ -41,6 +42,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/classroom', classroomRoutes);
+app.use('/api/internship', internshipRoutes);
 
 
   const Initaliseconnection=async()=>{

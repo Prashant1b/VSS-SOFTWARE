@@ -10,6 +10,8 @@ import Enrollment from '../models/Enrollment.js';
 import Recruitment from '../models/Recruitment.js';
 import Batch from '../models/Batch.js';
 import ClassSession from '../models/ClassSession.js';
+import InternshipApplication from '../models/InternshipApplication.js';
+import InternshipDomain from '../models/InternshipDomain.js';
 
 const normalizeListInput = (value) => {
   if (Array.isArray(value)) {
@@ -35,16 +37,18 @@ const normalizeCoursePayload = (payload) => ({
 
 export const getDashboardStats = async (req, res) => {
   try {
-    const [users, contacts, enrollments, recruitments, placements, courses] = await Promise.all([
+    const [users, contacts, enrollments, recruitments, placements, courses, internships, internshipDomains] = await Promise.all([
       User.countDocuments(),
       Contact.countDocuments(),
       Enrollment.countDocuments(),
       Recruitment.countDocuments(),
       Placement.countDocuments(),
       Course.countDocuments(),
+      InternshipApplication.countDocuments(),
+      InternshipDomain.countDocuments(),
     ]);
 
-    res.json({ success: true, stats: { users, contacts, enrollments, recruitments, placements, courses } });
+    res.json({ success: true, stats: { users, contacts, enrollments, recruitments, placements, courses, internships, internshipDomains } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -493,6 +497,94 @@ export const deleteRecruitment = async (req, res) => {
   try {
     await Recruitment.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Recruitment deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getInternships = async (req, res) => {
+  try {
+    const data = await InternshipApplication.find().sort({ createdAt: -1 });
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateInternship = async (req, res) => {
+  try {
+    const application = await InternshipApplication.findById(req.params.id);
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Internship application not found' });
+    }
+
+    if (req.body.interviewStatus) {
+      const allowed = ['not_required', 'pending', 'cleared', 'rejected'];
+      if (!allowed.includes(req.body.interviewStatus)) {
+        return res.status(400).json({ success: false, message: 'Invalid interview status' });
+      }
+
+      application.interviewStatus = req.body.interviewStatus;
+
+      if (application.planType === 'talent_free_review') {
+        if (req.body.interviewStatus === 'cleared') application.status = 'interview_cleared';
+        if (req.body.interviewStatus === 'rejected') application.status = 'interview_rejected';
+        if (req.body.interviewStatus === 'pending') application.status = 'interview_pending';
+      }
+    }
+
+    if (req.body.status) {
+      application.status = req.body.status;
+    }
+
+    await application.save();
+    res.json({ success: true, data: application });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteInternship = async (req, res) => {
+  try {
+    await InternshipApplication.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Internship application deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getInternshipDomains = async (req, res) => {
+  try {
+    const data = await InternshipDomain.find().sort({ order: 1, createdAt: -1 });
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const createInternshipDomain = async (req, res) => {
+  try {
+    const item = new InternshipDomain(req.body);
+    await item.save();
+    res.status(201).json({ success: true, data: item });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const updateInternshipDomain = async (req, res) => {
+  try {
+    const item = await InternshipDomain.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    res.json({ success: true, data: item });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteInternshipDomain = async (req, res) => {
+  try {
+    await InternshipDomain.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Internship domain deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
