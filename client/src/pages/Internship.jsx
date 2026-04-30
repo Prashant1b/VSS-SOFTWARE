@@ -365,7 +365,7 @@ export default function Internship() {
               {submitStatus === 'interview' && <p className="form-success">Application submitted! Free 6-month internship will be approved only after interview clearance.</p>}
               {submitStatus === 'paid' && <p className="form-success">Payment successful! Your 6-month internship application is confirmed.</p>}
               {submitStatus === 'payment-error' && <p className="form-error">Payment captured, but verification failed. Please contact support with your payment ID.</p>}
-              {submitStatus === 'error' && <p className="form-error">Something went wrong. Please try again or contact vatedigital@gmail.com.</p>}
+              {submitStatus === 'error' && <p className="form-error">Something went wrong. Please try again or contact sales@vatedigi.com.</p>}
             </form>
           </div>
         </div>

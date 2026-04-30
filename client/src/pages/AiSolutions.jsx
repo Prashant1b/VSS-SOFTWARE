@@ -198,7 +198,7 @@ export default function AiSolutions() {
                 {loading ? <><span className="spinner" /> Submitting...</> : <>Book Discovery Call <FiArrowRight size={16} /></>}
               </button>
               {submitStatus === 'success' && <p className="form-success">Request submitted! Our AI team will reach out within 24 hours.</p>}
-              {submitStatus === 'error' && <p className="form-error">Something went wrong. Please try again or email us at vatedigital@gmail.com.</p>}
+              {submitStatus === 'error' && <p className="form-error">Something went wrong. Please try again or email us at sales@vatedigi.com.</p>}
             </form>
           </div>
         </div>
