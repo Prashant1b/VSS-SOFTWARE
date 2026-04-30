@@ -212,7 +212,7 @@ export default function Staffing() {
                 {loading ? <><span className="spinner" /> Submitting...</> : 'Send Requirements'}
               </button>
               {submitStatus === 'success' && <p className="form-success">Requirement submitted! Our team will reach out within 48 hours.</p>}
-              {submitStatus === 'error' && <p className="form-error">Something went wrong. Please try again or email us at vatedigital@gmail.com.</p>}
+              {submitStatus === 'error' && <p className="form-error">Something went wrong. Please try again or email us at sales@vatedigi.com.</p>}
             </form>
           </div>
         </div>

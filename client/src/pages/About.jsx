@@ -47,14 +47,30 @@ const centers = [
   { city: 'Chennai', state: 'Tamil Nadu' },
 ]
 
+const fallbackImpactStats = [
+  { key: 'students_placed', label: 'Students Placed', value: 400, suffix: '+' },
+  { key: 'college_partners', label: 'College Partners', value: 50, suffix: '+' },
+  { key: 'hiring_partners', label: 'Hiring Partners', value: 100, suffix: '+' },
+  { key: 'training_centers', label: 'Training Centers', value: 5, suffix: ' Cities' },
+]
+
 export default function About() {
   const [topCompanies, setTopCompanies] = useState([])
+  const [impactStats, setImpactStats] = useState(fallbackImpactStats)
 
   useEffect(() => {
     api.get('/public/partners')
       .then((res) => {
         if (res.data.data?.length) {
           setTopCompanies(res.data.data)
+        }
+      })
+      .catch(() => {})
+
+    api.get('/public/stats')
+      .then((res) => {
+        if (res.data.data?.length) {
+          setImpactStats(res.data.data.slice(0, 4))
         }
       })
       .catch(() => {})
@@ -79,22 +95,12 @@ export default function About() {
       <section className="about-impact">
         <div className="container">
           <div className="about-impact-grid">
-            <div className="about-impact-item">
-              <div className="about-impact-value"><AnimatedCounter end={400} suffix="+" /></div>
-              <div className="about-impact-label">Students Placed</div>
-            </div>
-            <div className="about-impact-item">
-              <div className="about-impact-value"><AnimatedCounter end={50} suffix="+" /></div>
-              <div className="about-impact-label">College Partners</div>
-            </div>
-            <div className="about-impact-item">
-              <div className="about-impact-value"><AnimatedCounter end={100} suffix="+" /></div>
-              <div className="about-impact-label">Hiring Partners</div>
-            </div>
-            <div className="about-impact-item">
-              <div className="about-impact-value"><AnimatedCounter end={5} suffix=" Cities" /></div>
-              <div className="about-impact-label">Training Centers</div>
-            </div>
+            {impactStats.map((stat) => (
+              <div key={stat.key || stat.label} className="about-impact-item">
+                <div className="about-impact-value"><AnimatedCounter end={stat.value} suffix={stat.suffix || ''} /></div>
+                <div className="about-impact-label">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

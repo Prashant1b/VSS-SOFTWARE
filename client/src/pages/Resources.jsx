@@ -48,7 +48,7 @@ export default function Resources() {
   }
 
   const handleResourceClick = (title) => {
-    alert(`"${title}" will be available for download soon. Contact us at vatedigital@gmail.com to request early access.`)
+    alert(`"${title}" will be available for download soon. Contact us at sales@vatedigi.com to request early access.`)
   }
 
   return (
@@ -141,7 +141,7 @@ export default function Resources() {
                   <div className="contact-method-icon"><FiMail size={18} /></div>
                   <div>
                     <strong>Email</strong>
-                    <a href="mailto:vatedigital@gmail.com">sales@vatedigi.com</a>
+                    <a href="mailto:sales@vatedigi.com">sales@vatedigi.com</a>
                   </div>
                 </div>
                 <div className="contact-method">
@@ -197,7 +197,7 @@ export default function Resources() {
                 {loading ? <><span className="spinner" /> Sending...</> : 'Send Message'}
               </button>
               {submitStatus === 'success' && <p className="form-success">Message sent! We'll get back to you within 24 hours.</p>}
-              {submitStatus === 'error' && <p className="form-error">Something went wrong. Please try again or email us directly at vatedigital@gmail.com.</p>}
+              {submitStatus === 'error' && <p className="form-error">Something went wrong. Please try again or email us directly at sales@vatedigi.com.</p>}
             </form>
           </div>
         </div>
