@@ -284,7 +284,10 @@ export default function Dashboard() {
                         <div>
                           <span className="status-badge available">Enrolled</span>
                           <h3>{item.course}</h3>
-                          <p>Payment verified and access is active on your account.</p>
+                          <p>
+                            Payment verified and access is active on your account.
+                            {item.classModeLabel ? ` ${item.classModeLabel} selected.` : ''}
+                          </p>
                         </div>
                         <div className="dash-enrolled-actions">
                           <Link to={`/my-learning/${item.courseSlug}`} className="btn btn-outline btn-sm">
@@ -360,7 +363,10 @@ export default function Dashboard() {
                     <div key={item._id} className="dash-course-card card">
                       <div className="dash-course-info">
                         <h3>{item.course}</h3>
-                        <p>{isPaid ? 'Enrolled and unlocked' : 'Demo booked, waiting for payment'}</p>
+                        <p>
+                          {isPaid ? 'Enrolled and unlocked' : 'Demo booked, waiting for payment'}
+                          {item.classModeLabel ? ` - ${item.classModeLabel}` : ''}
+                        </p>
                       </div>
                       <div className="dash-course-status">
                         <span className={`status-badge ${isPaid ? 'available' : 'coming'}`}>

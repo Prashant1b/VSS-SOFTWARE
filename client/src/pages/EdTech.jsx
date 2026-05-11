@@ -89,6 +89,29 @@ function getDiscountPercent(current, original) {
   return Math.round(((ori - cur) / ori) * 100)
 }
 
+function getClassOptions(course) {
+  if (!course) return []
+
+  return [
+    { value: 'online', title: 'Online Classes', amount: Number(course.onlineAmount || 0), desc: 'Live online learning with mentor support and dashboard access.' },
+    { value: 'hybrid', title: 'Hybrid Classes', amount: Number(course.hybridAmount || 0), desc: 'Online learning plus scheduled in-person support sessions.' },
+    { value: 'offline', title: 'Offline Classes', amount: Number(course.offlineAmount || 0), desc: 'Classroom-based training with direct faculty interaction.' },
+  ].map((option) => ({
+    ...option,
+    price: option.amount > 0 ? formatCurrency(option.amount) : 'Not set',
+    available: option.amount > 0,
+  }))
+}
+
+function getStartingPrice(course) {
+  const amounts = getClassOptions(course)
+    .map((option) => option.amount)
+    .filter((amount) => amount > 0)
+
+  if (!amounts.length) return course.price || formatCurrency(course.amount)
+  return `Starts at ${formatCurrency(Math.min(...amounts))}`
+}
+
 function normalizeCourse(course) {
   const preset = courseVisuals[course.slug] || courseVisuals.default
   const dbFeatures = Array.isArray(course.features) && course.features.length ? course.features : []
@@ -109,8 +132,8 @@ function normalizeCourse(course) {
     accent: course.accentTone || 'violet',
     features: dbFeatures.length ? dbFeatures : legacyHighlights,
     tech: dbTechStack.length ? dbTechStack : legacyHighlights.slice(0, 6),
-    displayPrice: course.price || formatCurrency(course.amount),
-    displayOriginalPrice: course.originalPrice || '',
+    displayPrice: getStartingPrice(course),
+    displayOriginalPrice: '',
     isFree: !course.amount || course.amount === 0,
   }
 }
@@ -171,6 +194,7 @@ export default function EdTech() {
   }
 
   const CourseIcon = activeCourse.icon || FiBookOpen
+  const activeClassOptions = getClassOptions(activeCourse)
 
   return (
     <div className="page-enter">
@@ -182,7 +206,7 @@ export default function EdTech() {
             <span className="hero-highlight">Professional Course Enrollment</span>
           </h1>
           <p className="edtech-hero-sub">
-            Industry-focused training with live mentorship, real projects, and placement support.
+            Industry-focused training with online, hybrid, and offline class options.
           </p>
           <div className="hero-actions" style={{ justifyContent: 'center' }}>
             <a href="#enroll" className="btn btn-primary">Book Demo or Pay</a>
@@ -280,6 +304,33 @@ export default function EdTech() {
             })}
           </div>
 
+        </div>
+      </section>
+
+      <section className="section-alt" id="class-options">
+        <div className="container">
+          <div className="section-header">
+            <span className="section-label">Class Options</span>
+            <h2 className="section-title">Choose Your Class Mode</h2>
+            <p className="section-subtitle">Students can enroll with one of these three options only.</p>
+          </div>
+          <div className="class-option-grid">
+            {activeClassOptions.map((option) => (
+              <div key={option.value} className={`class-option-card ${option.value === 'online' ? 'featured' : ''}`}>
+                <div className="class-option-head">
+                  {option.value === 'online' && <FiCloud size={22} />}
+                  {option.value === 'hybrid' && <FiUsers size={22} />}
+                  {option.value === 'offline' && <FiBookOpen size={22} />}
+                  <span>{option.price}</span>
+                </div>
+                <h3>{option.title}</h3>
+                <p>{option.desc}</p>
+                <Link to={activeCourse ? `/courses/${activeCourse.slug}` : '/edtech'} className="class-option-link">
+                  Enroll with this option
+                </Link>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -407,6 +458,7 @@ export default function EdTech() {
             <div className="enroll-cta-benefits">
               <div><FiCheck size={16} /> Razorpay secure payment</div>
               <div><FiCheck size={16} /> Free demo class before you pay</div>
+              <div><FiCheck size={16} /> Online, hybrid, and offline prices are managed from admin</div>
               <div><FiCheck size={16} /> Dashboard access after enrollment</div>
               <div><FiCheck size={16} /> Industry certification on completion</div>
             </div>

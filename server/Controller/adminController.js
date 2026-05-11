@@ -30,10 +30,18 @@ const normalizeListInput = (value) => {
 
 const normalizeCoursePayload = (payload) => ({
   ...payload,
+  classLocation: String(payload.classLocation || payload.location || '').trim(),
+  classLocationUrl: String(payload.classLocationUrl || payload.locationUrl || payload.mapUrl || '').trim(),
   features: normalizeListInput(payload.features),
   techStack: normalizeListInput(payload.techStack),
   highlights: normalizeListInput(payload.highlights),
 });
+
+const enrollmentClassModes = {
+  online: 'Online Classes',
+  hybrid: 'Hybrid Classes',
+  offline: 'Offline Classes',
+};
 
 export const getDashboardStats = async (req, res) => {
   try {
@@ -124,7 +132,7 @@ export const createPlacement = async (req, res) => {
 
 export const updatePlacement = async (req, res) => {
   try {
-    const item = await Placement.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const item = await Placement.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     res.json({ success: true, data: item });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -151,7 +159,8 @@ export const getCourses = async (req, res) => {
 
 export const createCourse = async (req, res) => {
   try {
-    const item = new Course(normalizeCoursePayload(req.body));
+    const payload = normalizeCoursePayload(req.body);
+    const item = new Course(payload);
     await item.save();
     res.status(201).json({ success: true, data: item });
   } catch (error) {
@@ -161,7 +170,8 @@ export const createCourse = async (req, res) => {
 
 export const updateCourse = async (req, res) => {
   try {
-    const item = await Course.findByIdAndUpdate(req.params.id, normalizeCoursePayload(req.body), { new: true });
+    const payload = normalizeCoursePayload(req.body);
+    const item = await Course.findByIdAndUpdate(req.params.id, { $set: payload }, { returnDocument: 'after', runValidators: true });
     res.json({ success: true, data: item });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -198,7 +208,7 @@ export const createTestimonial = async (req, res) => {
 
 export const updateTestimonial = async (req, res) => {
   try {
-    const item = await Testimonial.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const item = await Testimonial.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     res.json({ success: true, data: item });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -235,7 +245,7 @@ export const createHiringDrive = async (req, res) => {
 
 export const updateHiringDrive = async (req, res) => {
   try {
-    const item = await HiringDrive.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const item = await HiringDrive.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     res.json({ success: true, data: item });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -272,7 +282,7 @@ export const createSiteStat = async (req, res) => {
 
 export const updateSiteStat = async (req, res) => {
   try {
-    const item = await SiteStat.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const item = await SiteStat.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after', runValidators: true });
     res.json({ success: true, data: item });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -309,7 +319,7 @@ export const createPartner = async (req, res) => {
 
 export const updatePartner = async (req, res) => {
   try {
-    const item = await Partner.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const item = await Partner.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     res.json({ success: true, data: item });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -378,6 +388,26 @@ export const updateEnrollment = async (req, res) => {
       enrollment.batchName = batch.title;
     }
 
+    if (req.body.classMode !== undefined) {
+      if (req.body.classMode === '') {
+        enrollment.classMode = undefined;
+        enrollment.classModeLabel = '';
+      } else if (enrollmentClassModes[req.body.classMode]) {
+        enrollment.classMode = req.body.classMode;
+        enrollment.classModeLabel = enrollmentClassModes[req.body.classMode];
+      } else {
+        return res.status(400).json({ success: false, message: 'Invalid class mode' });
+      }
+    }
+
+    if (req.body.classLocation !== undefined) {
+      enrollment.classLocation = String(req.body.classLocation || '').trim();
+    }
+
+    if (req.body.classLocationUrl !== undefined) {
+      enrollment.classLocationUrl = String(req.body.classLocationUrl || '').trim();
+    }
+
     await enrollment.save();
     res.json({ success: true, data: enrollment });
   } catch (error) {
@@ -405,7 +435,7 @@ export const getBatches = async (req, res) => {
 
 export const createBatch = async (req, res) => {
   try {
-    const { title, courseSlug, teacherId, description, startDate, isActive } = req.body;
+    const { title, courseSlug, teacherId, description, classLocation, classLocationUrl, startDate, isActive } = req.body;
     const [course, teacher] = await Promise.all([
       Course.findOne({ slug: courseSlug }),
       User.findOne({ _id: teacherId, role: { $in: ['teacher', 'admin'] } }),
@@ -426,6 +456,8 @@ export const createBatch = async (req, res) => {
       teacher: teacher._id,
       teacherName: teacher.name,
       description: String(description || '').trim(),
+      classLocation: String(classLocation || '').trim(),
+      classLocationUrl: String(classLocationUrl || '').trim(),
       startDate: startDate ? new Date(startDate) : null,
       isActive: typeof isActive === 'boolean' ? isActive : true,
     });
@@ -463,6 +495,8 @@ export const updateBatch = async (req, res) => {
 
     if (req.body.title !== undefined) item.title = req.body.title;
     if (req.body.description !== undefined) item.description = String(req.body.description || '').trim();
+    if (req.body.classLocation !== undefined) item.classLocation = String(req.body.classLocation || '').trim();
+    if (req.body.classLocationUrl !== undefined) item.classLocationUrl = String(req.body.classLocationUrl || '').trim();
     if (req.body.startDate !== undefined) item.startDate = req.body.startDate ? new Date(req.body.startDate) : null;
     if (req.body.isActive !== undefined) item.isActive = Boolean(req.body.isActive);
 
@@ -574,7 +608,7 @@ export const createInternshipDomain = async (req, res) => {
 
 export const updateInternshipDomain = async (req, res) => {
   try {
-    const item = await InternshipDomain.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const item = await InternshipDomain.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after', runValidators: true });
     res.json({ success: true, data: item });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });

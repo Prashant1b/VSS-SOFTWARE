@@ -1,6 +1,7 @@
 import Enrollment from '../models/Enrollment.js';
 import Batch from '../models/Batch.js';
 import ClassSession from '../models/ClassSession.js';
+import Course from '../models/Course.js';
 import { createLiveKitToken, getLiveKitConfig } from '../config/livekit.js';
 
 const mapEnrollmentCard = (item) => ({
@@ -9,6 +10,10 @@ const mapEnrollmentCard = (item) => ({
   courseSlug: item.courseSlug,
   batchId: item.batchId,
   batchName: item.batchName,
+  classMode: item.classMode,
+  classModeLabel: item.classModeLabel,
+  classLocation: item.classLocation,
+  classLocationUrl: item.classLocationUrl,
   status: item.status,
   paidAt: item.paidAt,
 });
@@ -40,10 +45,13 @@ export const getCourseClassroom = async (req, res) => {
       return res.status(404).json({ success: false, message: 'You do not have access to this course' });
     }
 
+    const course = await Course.findOne({ slug: enrollment.courseSlug }).lean();
+
     if (!enrollment.batchId) {
       return res.json({
         success: true,
         enrollment: mapEnrollmentCard(enrollment),
+        course,
         batch: null,
         liveClasses: [],
         recordedClasses: [],
@@ -55,6 +63,7 @@ export const getCourseClassroom = async (req, res) => {
       return res.json({
         success: true,
         enrollment: mapEnrollmentCard(enrollment),
+        course,
         batch: null,
         liveClasses: [],
         recordedClasses: [],
@@ -73,6 +82,7 @@ export const getCourseClassroom = async (req, res) => {
     res.json({
       success: true,
       enrollment: mapEnrollmentCard(enrollment),
+      course,
       batch,
       liveClasses,
       recordedClasses,

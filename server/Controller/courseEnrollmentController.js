@@ -5,6 +5,12 @@ import Course from '../models/Course.js';
 
 const cleanEnv = (value) => String(value || '').trim().replace(/^"|"$/g, '');
 
+const CLASS_OPTIONS = {
+  online: { label: 'Online Classes', amountKey: 'onlineAmount' },
+  hybrid: { label: 'Hybrid Classes', amountKey: 'hybridAmount' },
+  offline: { label: 'Offline Classes', amountKey: 'offlineAmount' },
+};
+
 function getRazorpayConfig() {
   const keyId = cleanEnv(process.env.RAZORPAY_KEY_ID);
   const keySecret = cleanEnv(process.env.RAZORPAY_KEY_SECRET);
@@ -38,17 +44,16 @@ async function getCourseBySlug(courseSlug) {
   return Course.findOne({ slug: courseSlug, isActive: true }).lean();
 }
 
-function getCourseAmount(course) {
-  if (Number.isFinite(course?.amount) && course.amount > 0) {
-    return course.amount;
+function getClassOption(course, classMode) {
+  const option = CLASS_OPTIONS[classMode];
+  if (!option) return null;
+
+  const amount = Number(course?.[option.amountKey] || 0);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null;
   }
 
-  const numeric = Number(String(course?.price || '').replace(/[^0-9.]/g, ''));
-  if (Number.isFinite(numeric) && numeric > 0) {
-    return numeric;
-  }
-
-  return 0;
+  return { label: option.label, amount };
 }
 
 export const getMyCourseEnrollments = async (req, res) => {
@@ -133,7 +138,7 @@ export const scheduleDemoSlot = async (req, res) => {
         demoNotes: String(notes || '').trim(),
         demoVideoUrl: course.demoVideoUrl,
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     res.json({
@@ -148,7 +153,7 @@ export const scheduleDemoSlot = async (req, res) => {
 
 export const createPaymentOrder = async (req, res) => {
   try {
-    const { courseSlug } = req.body;
+    const { courseSlug, classMode = 'online' } = req.body;
     const course = await getCourseBySlug(courseSlug);
 
     if (!course) {
@@ -170,10 +175,11 @@ export const createPaymentOrder = async (req, res) => {
     }
 
     const { keyId, keySecret } = getRazorpayConfig();
-    const amount = getCourseAmount(course);
-    if (!amount) {
-      return res.status(400).json({ success: false, message: 'Course amount is missing. Update the course in admin before taking payment.' });
+    const classOption = getClassOption(course, classMode);
+    if (!classOption) {
+      return res.status(400).json({ success: false, message: 'Selected class mode price is missing. Update online, hybrid, and offline prices in admin.' });
     }
+    const amount = classOption.amount;
 
     const currency = course.currency || 'INR';
     const amountInPaise = amount * 100;
@@ -187,6 +193,8 @@ export const createPaymentOrder = async (req, res) => {
         receipt,
         notes: {
           courseSlug: course.slug,
+          classMode,
+          classModeLabel: classOption.label,
           userId: String(req.user._id),
           email: req.user.email,
         },
@@ -209,6 +217,8 @@ export const createPaymentOrder = async (req, res) => {
         institution: req.user.institution || '',
         course: course.title,
         courseSlug: course.slug,
+        classMode,
+        classModeLabel: classOption.label,
         source: 'dashboard_enrollment',
         status: 'payment_pending',
         amount,
@@ -219,7 +229,7 @@ export const createPaymentOrder = async (req, res) => {
         paidAt: undefined,
         demoVideoUrl: course.demoVideoUrl,
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     res.json({
@@ -278,7 +288,6 @@ export const verifyCoursePayment = async (req, res) => {
     enrollment.paymentId = paymentId;
     enrollment.paymentSignature = signature;
     enrollment.paidAt = new Date();
-    enrollment.amount = getCourseAmount(course);
     enrollment.currency = course.currency || 'INR';
     enrollment.demoVideoUrl = course.demoVideoUrl;
     await enrollment.save();

@@ -193,6 +193,75 @@
   padding: 12px 18px;
 }
 
+.class-option-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.class-option-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 28px;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+}
+
+.class-option-card:hover,
+.class-option-card.featured {
+  border-color: var(--primary-border);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-4px);
+}
+
+.class-option-card.featured {
+  background: linear-gradient(180deg, white 0%, var(--primary-bg) 100%);
+}
+
+.class-option-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: var(--primary);
+}
+
+.class-option-head span {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--secondary-bg);
+  color: var(--secondary);
+  border: 1px solid rgba(0, 135, 90, 0.16);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.class-option-card h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.class-option-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 18px;
+}
+
+.class-option-link {
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
 /* ── Course Detail Card ── */
 .course-detail-card {
   display: grid;
@@ -716,6 +785,7 @@
 
 @media (max-width: 992px) {
   .edtech-hero-title { font-size: 36px; }
+  .class-option-grid { grid-template-columns: 1fr; }
   .enrollment-wrapper { grid-template-columns: 1fr; gap: 40px; }
   .curriculum-body { padding-left: 24px; }
   .course-detail-card { grid-template-columns: 1fr; gap: 32px; padding: 36px 28px; }

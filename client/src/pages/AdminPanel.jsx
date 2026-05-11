@@ -43,10 +43,15 @@ const courseFields = [
   { key: 'slug', label: 'Slug', required: true, placeholder: 'e.g. genai' },
   { key: 'categoryLabel', label: 'Card Category', placeholder: 'e.g. Full Stack Development' },
   { key: 'cardHeadline', label: 'Card Headline', placeholder: 'e.g. With GenAI' },
+  { key: 'classLocation', label: 'Class Location Name', placeholder: 'e.g. VSS Software Classroom, Pune' },
+  { key: 'classLocationUrl', label: 'Google Maps URL', placeholder: 'https://maps.google.com/...' },
   { key: 'duration', label: 'Duration', required: true, placeholder: 'e.g. 60 Hours' },
   { key: 'durationLabel', label: 'Card Duration Label', placeholder: 'e.g. 8 Months' },
   { key: 'price', label: 'Price', required: true, placeholder: 'e.g. Rs 45,000' },
   { key: 'amount', label: 'Amount (INR)', required: true, type: 'number', placeholder: 'e.g. 45000' },
+  { key: 'onlineAmount', label: 'Online Class Amount', type: 'number', placeholder: 'e.g. 3000' },
+  { key: 'hybridAmount', label: 'Hybrid Class Amount', type: 'number', placeholder: 'e.g. 3500' },
+  { key: 'offlineAmount', label: 'Offline Class Amount', type: 'number', placeholder: 'e.g. 4000' },
   { key: 'originalPrice', label: 'Original Price', placeholder: 'e.g. Rs 60,000' },
   { key: 'mode', label: 'Mode', placeholder: 'e.g. Online / Self-Paced' },
   { key: 'students', label: 'Students Count', placeholder: 'e.g. 150+' },
@@ -124,6 +129,8 @@ const enrollmentColumns = [
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
   { key: 'course', label: 'Course' },
+  { key: 'classModeLabel', label: 'Class Mode', render: (value) => value || '-' },
+  { key: 'amount', label: 'Amount', render: (value) => value ? `Rs ${value}` : '-' },
   { key: 'batchName', label: 'Batch', render: (value) => value || 'Not assigned' },
   { key: 'status', label: 'Status', render: (value) => <span className={`admin-badge ${value === 'paid' ? 'admin-badge-active' : 'admin-badge-student'}`}>{value || 'lead'}</span> },
   { key: 'institution', label: 'Institution' },
@@ -354,10 +361,26 @@ function CrudSection({ endpoint, fields }) {
   const handleSave = async () => {
     setSaving(true)
     try {
+      const payload = endpoint === 'courses'
+        ? {
+            ...form,
+            classLocation: String(form.classLocation || '').trim(),
+            classLocationUrl: String(form.classLocationUrl || '').trim(),
+          }
+        : form
+
+      let response
       if (editing) {
-        await api.put(`/admin/${endpoint}/${editing}`, form, { withCredentials: true })
+        response = await api.put(`/admin/${endpoint}/${editing}`, payload, { withCredentials: true })
       } else {
-        await api.post(`/admin/${endpoint}`, form, { withCredentials: true })
+        response = await api.post(`/admin/${endpoint}`, payload, { withCredentials: true })
+      }
+
+      if (response?.data?.data) {
+        const savedItem = response.data.data
+        setData((current) => editing
+          ? current.map((item) => item._id === savedItem._id ? savedItem : item)
+          : [savedItem, ...current])
       }
       setShowModal(false)
       fetchData()
@@ -382,6 +405,8 @@ function CrudSection({ endpoint, fields }) {
     ? [
         { key: 'title', label: 'Course Title' },
         { key: 'slug', label: 'Slug' },
+        { key: 'classLocation', label: 'Location', render: (value, item) => value || item.location || '-' },
+        { key: 'classLocationUrl', label: 'Map URL', render: (value, item) => value || item.locationUrl || item.mapUrl ? 'Added' : '-' },
         { key: 'duration', label: 'Duration' },
         { key: 'projectsCount', label: 'Projects' },
         {
@@ -390,6 +415,9 @@ function CrudSection({ endpoint, fields }) {
           render: (value) => Array.isArray(value) ? value.join(', ') : String(value || ''),
         },
         { key: 'price', label: 'Price' },
+        { key: 'onlineAmount', label: 'Online' },
+        { key: 'hybridAmount', label: 'Hybrid' },
+        { key: 'offlineAmount', label: 'Offline' },
         { key: 'students', label: 'Students Count' },
         { key: 'isActive', label: 'Active', type: 'checkbox' },
       ]
@@ -846,6 +874,8 @@ function BatchSection() {
     courseSlug: '',
     teacherId: '',
     description: '',
+    classLocation: '',
+    classLocationUrl: '',
     startDate: '',
     isActive: true,
   })
@@ -878,6 +908,8 @@ function BatchSection() {
       courseSlug: '',
       teacherId: '',
       description: '',
+      classLocation: '',
+      classLocationUrl: '',
       startDate: '',
       isActive: true,
     })
@@ -895,6 +927,8 @@ function BatchSection() {
       courseSlug: batch.courseSlug || '',
       teacherId: typeof batch.teacher === 'string' ? batch.teacher : batch.teacher?._id || '',
       description: batch.description || '',
+      classLocation: batch.classLocation || '',
+      classLocationUrl: batch.classLocationUrl || '',
       startDate: batch.startDate ? new Date(batch.startDate).toISOString().split('T')[0] : '',
       isActive: Boolean(batch.isActive),
     })
@@ -966,7 +1000,7 @@ function BatchSection() {
         <div className="admin-table-header">
           <div>
             <h3>{data.length} batches</h3>
-            <p className="admin-helper-text">Create batches here, then teachers can schedule live classes only for their assigned batches.</p>
+            <p className="admin-helper-text">Create batches here, then assign paid students to the correct batch.</p>
           </div>
           <button className="btn-admin btn-admin-primary" onClick={openAdd}>
             <FiPlus size={14} /> Add Batch
@@ -1224,6 +1258,7 @@ function EnrollmentSection() {
       <div className="admin-table-header">
         <div>
           <h3>{data.length} records</h3>
+          <p className="admin-helper-text">Class mode is selected by the student during purchase. Admin can only assign the batch here.</p>
          </div>
       </div>
       {data.length === 0 ? (
@@ -1254,19 +1289,19 @@ function EnrollmentSection() {
                     <td data-label="Actions">
                       <div className="actions actions-stack">
                         {item.status === 'paid' && (
-                          <select
-                            className="admin-inline-select"
-                            value={item.batchId || ''}
-                            disabled={updatingId === item._id}
-                            onChange={(event) => handleBatchChange(item, event.target.value)}
-                          >
-                            <option value="">No Batch</option>
-                            {matchingBatches.map((batch) => (
-                              <option key={batch._id} value={batch._id}>
-                                {batch.title}
-                              </option>
-                            ))}
-                          </select>
+                            <select
+                              className="admin-inline-select"
+                              value={item.batchId || ''}
+                              disabled={updatingId === item._id}
+                              onChange={(event) => handleBatchChange(item, event.target.value)}
+                            >
+                              <option value="">No Batch</option>
+                              {matchingBatches.map((batch) => (
+                                <option key={batch._id} value={batch._id}>
+                                  {batch.title}
+                                </option>
+                              ))}
+                            </select>
                         )}
                         <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={() => handleDelete(item._id)}>
                           <FiTrash2 size={12} />

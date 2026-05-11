@@ -7,6 +7,8 @@ const batchSchema = new mongoose.Schema({
   teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   teacherName: { type: String, required: true, trim: true },
   description: { type: String, default: '' },
+  classLocation: { type: String, default: '', trim: true },
+  classLocationUrl: { type: String, default: '', trim: true },
   startDate: { type: Date, default: null },
   liveClassUrl: { type: String, default: '' },
   isActive: { type: Boolean, default: true },
