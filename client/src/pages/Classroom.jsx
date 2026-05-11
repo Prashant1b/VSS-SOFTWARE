@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { FiCalendar, FiClock, FiExternalLink, FiPlayCircle, FiRadio, FiRefreshCw, FiVideo, FiX } from 'react-icons/fi'
+import { FiCalendar, FiClock, FiExternalLink, FiMapPin, FiPlayCircle, FiRadio, FiRefreshCw, FiVideo, FiX } from 'react-icons/fi'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
 import './Classroom.css'
@@ -41,6 +41,70 @@ function getEmbedUrl(rawUrl) {
 
 function isDirectVideo(rawUrl) {
   return /\.(mp4|m3u8|webm|ogg)(\?|$)/i.test(rawUrl || '')
+}
+
+function getLocationHref(location, locationUrl) {
+  const trimmedUrl = String(locationUrl || '').trim()
+  if (trimmedUrl) {
+    try {
+      const urlWithProtocol = /^https?:\/\//i.test(trimmedUrl) ? trimmedUrl : `https://${trimmedUrl}`
+      return new URL(urlWithProtocol).href
+    } catch {
+      // Fall back to searching the display name when the saved map URL is malformed.
+    }
+  }
+
+  const trimmedLocation = String(location || '').trim()
+  if (!trimmedLocation) return ''
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trimmedLocation)}`
+}
+
+function ClassroomLocation({ location, locationUrl }) {
+  const mapsUrl = getLocationHref(location, locationUrl)
+  const displayLocation = String(location || '').trim() || 'Open location'
+
+  return (
+    <div className="classroom-location-note">
+      <FiMapPin size={16} />
+      <div>
+        <strong>Class Location</strong>
+        {mapsUrl ? (
+          <a href={mapsUrl} target="_blank" rel="noreferrer">
+            {displayLocation} <FiExternalLink size={13} />
+          </a>
+        ) : (
+          <span>Location will be shared soon.</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function getPendingClassroomCopy(enrollment) {
+  if (enrollment?.classMode === 'offline') {
+    return {
+      title: 'Offline class details',
+      hero: 'Your payment is complete. Offline class location is listed below.',
+      message: 'Your payment has been completed. Your offline classroom schedule will appear here once your batch is ready.',
+      showLocation: true,
+    }
+  }
+
+  if (enrollment?.classMode === 'hybrid') {
+    return {
+      title: 'Hybrid class details',
+      hero: 'Your payment is complete. Hybrid class location is listed below.',
+      message: 'Your payment has been completed. Your hybrid class schedule and online sessions will appear here once your batch is ready.',
+      showLocation: true,
+    }
+  }
+
+  return {
+    title: 'Batch assignment pending',
+    hero: 'Your payment is complete, but batch assignment is still pending.',
+    message: 'Your payment has been completed, but your enrollment has not yet been mapped to a batch. Once that is done, live and recorded classes will appear here.',
+    showLocation: false,
+  }
 }
 
 export default function Classroom() {
@@ -113,6 +177,9 @@ export default function Classroom() {
   }
 
   const openRecording = data?.recordedClasses?.find((item) => item._id === openRecordingId) || null
+  const pendingCopy = getPendingClassroomCopy(data?.enrollment)
+  const classLocation = data?.course?.classLocation || data?.batch?.classLocation || data?.enrollment?.classLocation || ''
+  const classLocationUrl = data?.course?.classLocationUrl || data?.batch?.classLocationUrl || data?.enrollment?.classLocationUrl || ''
 
   return (
     <div className="classroom-page page-enter">
@@ -162,7 +229,7 @@ export default function Classroom() {
             <p>
               {data?.batch
                 ? `Batch: ${data.batch.title}. Access live classes, recordings, and notes from this page.`
-                : 'Your payment is complete, but batch assignment is still pending.'}
+                : pendingCopy.hero}
             </p>
           </div>
           <div className="classroom-hero-actions">
@@ -177,17 +244,16 @@ export default function Classroom() {
 
         {data && !data.batch && !error && (
           <div className="classroom-empty-card">
-            <h2>Batch assignment pending</h2>
-            <p>
-              Your payment has been completed, but your enrollment has not yet been mapped to a batch.
-              To fix this, an admin must open <code>Admin Panel -&gt; Enrollments</code> and assign your paid enrollment
-              to the correct batch for this course. Once that is done, live and recorded classes will appear here.
-            </p>
+            <h2>{pendingCopy.title}</h2>
+            <p>{pendingCopy.message}</p>
+            {pendingCopy.showLocation && <ClassroomLocation location={classLocation} locationUrl={classLocationUrl} />}
           </div>
         )}
 
         {data?.batch && (
           <>
+            {(classLocation || classLocationUrl) && <ClassroomLocation location={classLocation} locationUrl={classLocationUrl} />}
+
             <div className="classroom-section">
               <h2>Upcoming Live Classes</h2>
               <div className="classroom-grid">

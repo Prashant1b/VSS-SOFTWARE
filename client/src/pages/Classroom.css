@@ -90,6 +90,50 @@
   color: var(--text-secondary);
 }
 
+.classroom-location-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--primary-border);
+  border-radius: var(--radius-sm);
+  background: var(--primary-bg);
+  color: var(--text-primary);
+}
+
+.classroom-location-note svg {
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.classroom-location-note div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.classroom-location-note strong {
+  font-size: 13px;
+}
+
+.classroom-location-note span {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.classroom-location-note a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .classroom-meta,
 .classroom-links {
   display: flex;

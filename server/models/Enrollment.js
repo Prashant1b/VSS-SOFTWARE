@@ -7,6 +7,13 @@ const enrollmentSchema = new mongoose.Schema({
   phone: { type: String, required: true },
   course: { type: String, required: true },
   courseSlug: { type: String },
+  classMode: {
+    type: String,
+    enum: ['online', 'hybrid', 'offline'],
+  },
+  classModeLabel: { type: String, default: '' },
+  classLocation: { type: String, default: '' },
+  classLocationUrl: { type: String, default: '' },
   batchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch', default: null },
   batchName: { type: String, default: '' },
   institution: { type: String },

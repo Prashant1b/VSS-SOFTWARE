@@ -27,13 +27,6 @@ function formatCurrency(amount, fallback) {
   }).format(amount)
 }
 
-function getDiscountPercent(current, original) {
-  const cur = Number(String(current || '').replace(/[^0-9.]/g, ''))
-  const ori = Number(String(original || '').replace(/[^0-9.]/g, ''))
-  if (!cur || !ori || ori <= cur) return null
-  return ((ori - cur) / ori * 100).toFixed(2)
-}
-
 function normalizeCourse(course) {
   const preset = courseVisuals[course.slug] || courseVisuals.default
   const dbFeatures = Array.isArray(course.features) && course.features.length ? course.features : []
@@ -58,6 +51,20 @@ const emptyCourseState = {
   enrollment: null,
 }
 
+function getClassOptions(course) {
+  if (!course) return []
+
+  return [
+    { value: 'online', label: 'Online Classes', amount: Number(course.onlineAmount || 0) },
+    { value: 'hybrid', label: 'Hybrid Classes', amount: Number(course.hybridAmount || 0) },
+    { value: 'offline', label: 'Offline Classes', amount: Number(course.offlineAmount || 0) },
+  ].map((option) => ({
+    ...option,
+    displayPrice: option.amount > 0 ? formatCurrency(option.amount) : 'Not set',
+    available: option.amount > 0,
+  }))
+}
+
 export default function CourseDetail() {
   const { slug } = useParams()
   const { user } = useAuth()
@@ -71,6 +78,7 @@ export default function CourseDetail() {
   const [feedback, setFeedback] = useState({ type: '', message: '' })
   const [activeTab, setActiveTab] = useState('overview')
   const [openFaq, setOpenFaq] = useState(null)
+  const [selectedClassMode, setSelectedClassMode] = useState('online')
 
   // Demo form
   const [demoForm, setDemoForm] = useState({
@@ -118,6 +126,15 @@ export default function CourseDetail() {
       .finally(() => setStatusLoading(false))
   }, [course, user])
 
+  useEffect(() => {
+    if (!course) return
+
+    const availableOption = getClassOptions(course).find((option) => option.available)
+    if (availableOption && !getClassOptions(course).some((option) => option.value === selectedClassMode && option.available)) {
+      setSelectedClassMode(availableOption.value)
+    }
+  }, [course, selectedClassMode])
+
   const loadRazorpayScript = () =>
     new Promise((resolve) => {
       if (window.Razorpay) { resolve(true); return }
@@ -138,15 +155,20 @@ export default function CourseDetail() {
 
       const orderRes = await api.post('/course-enrollment/create-order', {
         courseSlug: course.slug,
+        classMode: selectedClassMode,
       }, { withCredentials: true })
 
       const { key, order } = orderRes.data
+      const selectedOption = getClassOptions(course).find((option) => option.value === selectedClassMode)
+      if (!selectedOption?.available) {
+        throw new Error('Selected class mode price is not set in admin.')
+      }
       const checkout = new window.Razorpay({
         key,
         amount: order.amount,
         currency: order.currency,
         name: 'VSS SOFTWARE',
-        description: `${course.title} enrollment`,
+        description: `${course.title} - ${selectedOption.label}`,
         order_id: order.id,
         prefill: { name: user.name, email: user.email, contact: user.phone || '' },
         theme: { color: '#0A2540' },
@@ -154,6 +176,7 @@ export default function CourseDetail() {
           try {
             const verifyRes = await api.post('/course-enrollment/verify-payment', {
               courseSlug: course.slug,
+              classMode: selectedClassMode,
               ...response,
             }, { withCredentials: true })
             setCourseState({
@@ -222,7 +245,9 @@ export default function CourseDetail() {
   if (!course) return null
 
   const CourseIcon = course.icon || FiBookOpen
-  const discount = getDiscountPercent(course.displayPrice, course.displayOriginalPrice)
+  const classOptions = getClassOptions(course)
+  const selectedClassOption = classOptions.find((option) => option.value === selectedClassMode) || classOptions.find((option) => option.available) || classOptions[0]
+  const hasClassPrice = Boolean(selectedClassOption?.available)
 
   return (
     <div className="cd-page">
@@ -426,6 +451,12 @@ export default function CourseDetail() {
                 <div className="cd-enrolled-state">
                   <span className="cd-badge cd-badge--enrolled">Enrolled</span>
                   <p>Your access is active. Open the classroom to continue learning.</p>
+                  {courseState.enrollment?.classModeLabel && (
+                    <div className="cd-selected-class-summary">
+                      <span>Class Mode</span>
+                      <strong>{courseState.enrollment.classModeLabel}</strong>
+                    </div>
+                  )}
                   {courseState.enrollment?.demoVideoUrl && (
                     <a className="cd-btn cd-btn--primary" href={courseState.enrollment.demoVideoUrl} target="_blank" rel="noreferrer">
                       <FiPlayCircle size={16} /> Watch Demo Video
@@ -445,14 +476,31 @@ export default function CourseDetail() {
                     <div className="cd-price-block">
                       <span className="cd-price-label">PRICE</span>
                       <div className="cd-price-row">
-                        <span className="cd-price-main">{course.displayPrice}</span>
-                        {course.displayOriginalPrice && (
-                          <span className="cd-price-original">{course.displayOriginalPrice}</span>
-                        )}
-                        {discount && (
-                          <span className="cd-discount-badge">{discount}% off</span>
-                        )}
+                        <span className="cd-price-main">{selectedClassOption.displayPrice}</span>
                       </div>
+                    </div>
+                  )}
+
+                  {!course.isFree && (
+                    <div className="cd-class-options">
+                      <span className="cd-class-options-label">Choose class mode</span>
+                      {classOptions.map((option) => (
+                        <label
+                          key={option.value}
+                          className={`cd-class-option ${selectedClassMode === option.value ? 'active' : ''}`}
+                        >
+                          <input
+                            type="radio"
+                            name="classMode"
+                            value={option.value}
+                            checked={selectedClassMode === option.value}
+                            onChange={() => setSelectedClassMode(option.value)}
+                            disabled={!option.available}
+                          />
+                          <span>{option.label}</span>
+                          <strong>{option.displayPrice}</strong>
+                        </label>
+                      ))}
                     </div>
                   )}
 
@@ -477,11 +525,11 @@ export default function CourseDetail() {
                     <button
                       className="cd-btn cd-btn--buy"
                       onClick={handleEnrollNow}
-                      disabled={actionLoading === 'payment' || statusLoading}
+                      disabled={actionLoading === 'payment' || statusLoading || !hasClassPrice}
                     >
                       {actionLoading === 'payment'
                         ? <><span className="spinner spinner--white" /> Processing...</>
-                        : 'Buy Now'}
+                        : hasClassPrice ? `Pay ${selectedClassOption.displayPrice}` : 'Price Not Set'}
                     </button>
                   )}
 
