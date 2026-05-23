@@ -223,6 +223,11 @@ export const createPaymentOrder = async (req, res) => {
         status: 'payment_pending',
         amount,
         currency,
+        accessType: 'paid',
+        accessReason: '',
+        grantedBy: null,
+        grantedByName: '',
+        grantedAt: undefined,
         paymentOrderId: orderResponse.data.id,
         paymentId: undefined,
         paymentSignature: undefined,
@@ -285,6 +290,11 @@ export const verifyCoursePayment = async (req, res) => {
     }
 
     enrollment.status = 'paid';
+    enrollment.accessType = 'paid';
+    enrollment.accessReason = '';
+    enrollment.grantedBy = null;
+    enrollment.grantedByName = '';
+    enrollment.grantedAt = undefined;
     enrollment.paymentId = paymentId;
     enrollment.paymentSignature = signature;
     enrollment.paidAt = new Date();

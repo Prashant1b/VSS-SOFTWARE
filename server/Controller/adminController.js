@@ -43,6 +43,8 @@ const enrollmentClassModes = {
   offline: 'Offline Classes',
 };
 
+const validClassModes = Object.keys(enrollmentClassModes);
+
 export const getDashboardStats = async (req, res) => {
   try {
     const [users, contacts, enrollments, recruitments, placements, courses, internships, internshipDomains] = await Promise.all([
@@ -421,6 +423,127 @@ export const deleteEnrollment = async (req, res) => {
     res.json({ success: true, message: 'Enrollment deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const grantCourseAccess = async (req, res) => {
+  try {
+    const { userId, courses = [], accessType = 'manual', accessReason = '' } = req.body;
+    const allowedAccessTypes = ['manual', 'scholarship', 'free'];
+    const cleanAccessType = allowedAccessTypes.includes(accessType) ? accessType : 'manual';
+    const cleanAccessReason = String(accessReason || '').trim();
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'Please select a student' });
+    }
+
+    if (!cleanAccessReason) {
+      return res.status(400).json({ success: false, message: 'Please enter why this access is being granted' });
+    }
+
+    if (!Array.isArray(courses) || courses.length === 0) {
+      return res.status(400).json({ success: false, message: 'Please select at least one course' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    if (user.role === 'employer') {
+      return res.status(400).json({ success: false, message: 'Course access can only be granted to student, teacher, or admin accounts' });
+    }
+
+    const uniqueCourseSlugs = [...new Set(courses.map((item) => String(item.courseSlug || '').trim()).filter(Boolean))];
+    if (uniqueCourseSlugs.length === 0) {
+      return res.status(400).json({ success: false, message: 'Please select at least one valid course' });
+    }
+
+    const courseDocs = await Course.find({ slug: { $in: uniqueCourseSlugs } });
+    const courseBySlug = new Map(courseDocs.map((course) => [course.slug, course]));
+    const missingCourse = uniqueCourseSlugs.find((slug) => !courseBySlug.has(slug));
+    if (missingCourse) {
+      return res.status(404).json({ success: false, message: `Course not found: ${missingCourse}` });
+    }
+
+    const granted = [];
+
+    for (const requestItem of courses) {
+      const courseSlug = String(requestItem.courseSlug || '').trim();
+      if (!courseSlug) continue;
+
+      const course = courseBySlug.get(courseSlug);
+      const classMode = validClassModes.includes(requestItem.classMode) ? requestItem.classMode : 'online';
+      let batchId = null;
+      let batchName = '';
+
+      if (requestItem.batchId) {
+        const batch = await Batch.findById(requestItem.batchId);
+        if (!batch) {
+          return res.status(404).json({ success: false, message: `Batch not found for ${course.title}` });
+        }
+        if (batch.courseSlug !== course.slug) {
+          return res.status(400).json({ success: false, message: `Selected batch does not match ${course.title}` });
+        }
+        batchId = batch._id;
+        batchName = batch.title;
+      }
+
+      const enrollment = await Enrollment.findOneAndUpdate(
+        { user: user._id, courseSlug: course.slug, source: 'dashboard_enrollment' },
+        {
+          $set: {
+            user: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone || 'Not provided',
+            institution: user.institution || '',
+            course: course.title,
+            courseSlug: course.slug,
+            classMode,
+            classModeLabel: enrollmentClassModes[classMode],
+            classLocation: course.classLocation || '',
+            classLocationUrl: course.classLocationUrl || '',
+            batchId,
+            batchName,
+            source: 'dashboard_enrollment',
+            status: 'paid',
+            amount: 0,
+            currency: course.currency || 'INR',
+            accessType: cleanAccessType,
+            accessReason: cleanAccessReason,
+            grantedBy: req.user._id,
+            grantedByName: req.user.name,
+            grantedAt: new Date(),
+            paidAt: new Date(),
+            demoVideoUrl: course.demoVideoUrl || '',
+            message: cleanAccessReason,
+          },
+          $unset: {
+            paymentOrderId: '',
+            paymentId: '',
+            paymentSignature: '',
+          },
+        },
+        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true, runValidators: true }
+      );
+
+      granted.push(enrollment);
+    }
+
+    await User.findByIdAndUpdate(user._id, {
+      $addToSet: {
+        enrolledCourses: { $each: granted.map((item) => item.courseSlug) },
+      },
+    });
+
+    res.json({
+      success: true,
+      message: `Granted access to ${granted.length} course${granted.length === 1 ? '' : 's'}`,
+      data: granted,
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
