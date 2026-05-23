@@ -19,6 +19,7 @@ const SECTIONS = [
   { key: 'internship-domains', label: 'Internship Domains', icon: <FiAward size={18} /> },
   { key: 'testimonials', label: 'Testimonials', icon: <FiMessageSquare size={18} /> },
   { key: 'hiring', label: 'Hiring Drives', icon: <FiBriefcase size={18} /> },
+  { key: 'resources', label: 'Resources', icon: <FiFileText size={18} /> },
   { key: 'stats', label: 'Site Stats', icon: <FiBarChart2 size={18} /> },
   { key: 'partners', label: 'Partners', icon: <FiCheckCircle size={18} /> },
   { key: 'users', label: 'Users', icon: <FiUsers size={18} />, section: 'Submissions' },
@@ -192,7 +193,7 @@ const internshipColumns = [
   { key: 'createdAt', label: 'Date', render: (value) => new Date(value).toLocaleDateString() },
 ]
 
-const uploadsBaseUrl = api.defaults.baseURL.replace(/\/api\/?$/, '')
+const uploadsBaseUrl = String(api.defaults.baseURL || '').replace(/\/$/, '')
 
 const recruitmentColumns = [
   { key: 'companyName', label: 'Company' },
@@ -205,7 +206,7 @@ const recruitmentColumns = [
     key: 'jdFile',
     label: 'Resume/JD',
     render: (value) => value ? (
-      <a href={`${uploadsBaseUrl}/uploads/${value}`} target="_blank" rel="noreferrer">
+      <a href={`${uploadsBaseUrl}/uploads/${encodeURIComponent(value)}`} target="_blank" rel="noreferrer">
         View File
       </a>
     ) : '-',
@@ -280,6 +281,7 @@ export default function AdminPanel() {
           {activeSection === 'internship-domains' && <CrudSection endpoint="internship-domains" fields={internshipDomainFields} />}
           {activeSection === 'testimonials' && <CrudSection endpoint="testimonials" fields={testimonialFields} />}
           {activeSection === 'hiring' && <CrudSection endpoint="hiring-drives" fields={hiringFields} />}
+          {activeSection === 'resources' && <ResourceSection />}
           {activeSection === 'stats' && <CrudSection endpoint="stats" fields={statFields} />}
           {activeSection === 'partners' && <CrudSection endpoint="partners" fields={partnerFields} />}
           {activeSection === 'users' && <UsersSection />}
@@ -696,6 +698,252 @@ function UsersSection() {
         )
       }}
     />
+  )
+}
+
+function ResourceSection() {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [editingId, setEditingId] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    type: 'Guide',
+    title: '',
+    desc: '',
+    category: 'career',
+    action: 'Download PDF',
+    externalUrl: '',
+    order: 0,
+    isActive: true,
+  })
+  const [file, setFile] = useState(null)
+
+  const fetchData = useCallback(() => {
+    setLoading(true)
+    api.get('/admin/resources', { withCredentials: true })
+      .then((res) => setData(res.data.data || []))
+      .catch(() => setData([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const resetForm = () => {
+    setForm({
+      type: 'Guide',
+      title: '',
+      desc: '',
+      category: 'career',
+      action: 'Download PDF',
+      externalUrl: '',
+      order: 0,
+      isActive: true,
+    })
+    setFile(null)
+    setEditingId(null)
+  }
+
+  const openAdd = () => {
+    resetForm()
+    setShowModal(true)
+  }
+
+  const openEdit = (item) => {
+    setForm({
+      type: item.type || 'Guide',
+      title: item.title || '',
+      desc: item.desc || '',
+      category: item.category || 'career',
+      action: item.action || 'Download PDF',
+      externalUrl: item.externalUrl || '',
+      order: item.order || 0,
+      isActive: Boolean(item.isActive),
+    })
+    setFile(null)
+    setEditingId(item._id)
+    setShowModal(true)
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const formData = new FormData()
+      Object.entries(form).forEach(([key, value]) => formData.append(key, value))
+      if (file) formData.append('file', file)
+
+      if (editingId) {
+        await api.put(`/admin/resources/${editingId}`, formData, {
+          withCredentials: true,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      } else {
+        await api.post('/admin/resources', formData, {
+          withCredentials: true,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      }
+
+      setShowModal(false)
+      resetForm()
+      fetchData()
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error saving resource')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this resource?')) return
+    try {
+      await api.delete(`/admin/resources/${id}`, { withCredentials: true })
+      fetchData()
+    } catch {
+      alert('Error deleting resource')
+    }
+  }
+
+  if (loading) return <div className="admin-loading"><span className="spinner" /></div>
+
+  return (
+    <div className="admin-table-wrapper">
+      <div className="admin-table-header">
+        <div>
+          <h3>{data.length} resources</h3>
+          <p className="admin-helper-text">Upload PDF/DOC/PPT files or paste recording/article links for the public Resources page.</p>
+        </div>
+        <button className="btn-admin btn-admin-primary" onClick={openAdd}>
+          <FiPlus size={14} /> Add Resource
+        </button>
+      </div>
+
+      {data.length === 0 ? (
+        <div className="admin-empty">
+          <FiAlertCircle size={32} />
+          <p>No resources uploaded yet.</p>
+        </div>
+      ) : (
+        <div className="admin-table-scroll">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>File/Link</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((item) => (
+                <tr key={item._id}>
+                  <td data-label="Title">
+                    <strong>{item.title}</strong>
+                    <div className="admin-helper-text">{item.desc}</div>
+                  </td>
+                  <td data-label="Type">{item.type}</td>
+                  <td data-label="Category">{item.category}</td>
+                  <td data-label="File/Link">
+                    {item.fileName ? <a href={`${uploadsBaseUrl}/uploads/${encodeURIComponent(item.fileName)}`} target="_blank" rel="noreferrer">View File</a> : item.externalUrl ? <a href={item.externalUrl} target="_blank" rel="noreferrer">Open Link</a> : '-'}
+                  </td>
+                  <td data-label="Status">
+                    <span className={`admin-badge ${item.isActive ? 'admin-badge-active' : 'admin-badge-inactive'}`}>
+                      {item.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td data-label="Actions">
+                    <div className="actions">
+                      <button className="btn-admin btn-admin-edit btn-admin-sm" onClick={() => openEdit(item)}>
+                        <FiEdit2 size={12} />
+                      </button>
+                      <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={() => handleDelete(item._id)}>
+                        <FiTrash2 size={12} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {showModal && (
+        <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="admin-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h3>{editingId ? 'Edit Resource' : 'Add Resource'}</h3>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className="admin-modal-body">
+              <div className="admin-form-group">
+                <label>Title</label>
+                <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+              </div>
+              <div className="admin-form-group">
+                <label>Description</label>
+                <textarea value={form.desc} onChange={(event) => setForm({ ...form, desc: event.target.value })} />
+              </div>
+              <div className="form-row">
+                <div className="admin-form-group">
+                  <label>Type</label>
+                  <input value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} placeholder="E-Book, Guide, Webinar" />
+                </div>
+                <div className="admin-form-group">
+                  <label>Category</label>
+                  <select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>
+                    <option value="career">Career</option>
+                    <option value="ai">AI & Tech</option>
+                    <option value="hiring">Hiring</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="admin-form-group">
+                  <label>Button Text</label>
+                  <input value={form.action} onChange={(event) => setForm({ ...form, action: event.target.value })} placeholder="Download PDF" />
+                </div>
+                <div className="admin-form-group">
+                  <label>Display Order</label>
+                  <input type="number" value={form.order} onChange={(event) => setForm({ ...form, order: event.target.value })} />
+                </div>
+              </div>
+              <div className="admin-form-group">
+                <label>Upload File</label>
+                <input type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+              </div>
+              <div className="admin-form-group">
+                <label>External URL</label>
+                <input value={form.externalUrl} onChange={(event) => setForm({ ...form, externalUrl: event.target.value })} placeholder="https://..." />
+              </div>
+              <div className="admin-form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={form.isActive}
+                    onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
+                    style={{ width: 'auto' }}
+                  />
+                  <span>Active on website</span>
+                </label>
+              </div>
+            </div>
+            <div className="admin-modal-footer">
+              <button className="btn-admin" onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="btn-admin btn-admin-primary" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : 'Save Resource'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

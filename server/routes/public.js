@@ -6,6 +6,7 @@ import {
   getPublicHiringDrives,
   getPublicStats,
   getPublicPartners,
+  getPublicResources,
 } from '../Controller/publicController.js';
 
 const router = express.Router();
@@ -16,5 +17,6 @@ router.get('/testimonials', getPublicTestimonials);
 router.get('/hiring-drives', getPublicHiringDrives);
 router.get('/stats', getPublicStats);
 router.get('/partners', getPublicPartners);
+router.get('/resources', getPublicResources);
 
 export default router;
