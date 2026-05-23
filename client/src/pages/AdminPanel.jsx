@@ -24,6 +24,7 @@ const SECTIONS = [
   { key: 'users', label: 'Users', icon: <FiUsers size={18} />, section: 'Submissions' },
   { key: 'contacts', label: 'Contacts', icon: <FiMail size={18} /> },
   { key: 'enrollments', label: 'Enrollments', icon: <FiFileText size={18} /> },
+  { key: 'course-access', label: 'Course Access', icon: <FiUserPlus size={18} /> },
   { key: 'internships', label: 'Internships', icon: <FiAward size={18} /> },
   { key: 'recruitments', label: 'Recruitments', icon: <FiBriefcase size={18} /> },
 ]
@@ -131,6 +132,26 @@ const enrollmentColumns = [
   { key: 'course', label: 'Course' },
   { key: 'classModeLabel', label: 'Class Mode', render: (value) => value || '-' },
   { key: 'amount', label: 'Amount', render: (value) => value ? `Rs ${value}` : '-' },
+  {
+    key: 'accessType',
+    label: 'Access',
+    render: (value) => {
+      const accessType = value || 'paid'
+      const badgeClass = accessType === 'paid' ? 'admin-badge-active' : 'admin-badge-student'
+      return <span className={`admin-badge ${badgeClass}`}>{accessType}</span>
+    },
+  },
+  {
+    key: 'grantedByName',
+    label: 'Granted By',
+    render: (value, item) => value ? (
+      <>
+        <strong>{value}</strong>
+        <div className="admin-helper-text">{item.grantedAt ? new Date(item.grantedAt).toLocaleDateString('en-IN') : '-'}</div>
+      </>
+    ) : '-',
+  },
+  { key: 'accessReason', label: 'Reason', render: (value) => value || '-' },
   { key: 'batchName', label: 'Batch', render: (value) => value || 'Not assigned' },
   { key: 'status', label: 'Status', render: (value) => <span className={`admin-badge ${value === 'paid' ? 'admin-badge-active' : 'admin-badge-student'}`}>{value || 'lead'}</span> },
   { key: 'institution', label: 'Institution' },
@@ -264,6 +285,7 @@ export default function AdminPanel() {
           {activeSection === 'users' && <UsersSection />}
           {activeSection === 'contacts' && <ReadOnlySection endpoint="contacts" columns={contactColumns} canDelete />}
           {activeSection === 'enrollments' && <EnrollmentSection />}
+          {activeSection === 'course-access' && <CourseAccessSection />}
           {activeSection === 'internships' && <InternshipSection />}
           {activeSection === 'recruitments' && <ReadOnlySection endpoint="recruitments" columns={recruitmentColumns} canDelete />}
         </div>
@@ -1201,6 +1223,222 @@ function BatchSection() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function CourseAccessSection() {
+  const [students, setStudents] = useState([])
+  const [courses, setCourses] = useState([])
+  const [batches, setBatches] = useState([])
+  const [enrollments, setEnrollments] = useState([])
+  const [selectedUserId, setSelectedUserId] = useState('')
+  const [selectedCourses, setSelectedCourses] = useState({})
+  const [accessType, setAccessType] = useState('manual')
+  const [accessReason, setAccessReason] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [feedback, setFeedback] = useState({ type: '', message: '' })
+
+  const fetchData = useCallback(() => {
+    setLoading(true)
+    Promise.all([
+      api.get('/admin/users', { withCredentials: true }),
+      api.get('/admin/courses', { withCredentials: true }),
+      api.get('/admin/batches', { withCredentials: true }),
+      api.get('/admin/enrollments', { withCredentials: true }),
+    ])
+      .then(([usersRes, coursesRes, batchesRes, enrollmentsRes]) => {
+        setStudents((usersRes.data.data || []).filter((item) => item.role !== 'employer'))
+        setCourses((coursesRes.data.data || []).filter((course) => course.isActive))
+        setBatches((batchesRes.data.data || []).filter((batch) => batch.isActive))
+        setEnrollments(enrollmentsRes.data.data || [])
+      })
+      .catch(() => setFeedback({ type: 'error', message: 'Unable to load course access data' }))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const selectedStudent = students.find((item) => item._id === selectedUserId)
+  const currentAccess = selectedUserId
+    ? enrollments.filter((item) => {
+        const enrollmentUserId = typeof item.user === 'object' ? item.user?._id : item.user
+        return item.status === 'paid' && (String(enrollmentUserId || '') === String(selectedUserId) || item.email === selectedStudent?.email)
+      })
+    : []
+  const currentAccessSlugs = new Set(currentAccess.map((item) => item.courseSlug).filter(Boolean))
+
+  const updateCourseSelection = (courseSlug, changes) => {
+    setSelectedCourses((current) => ({
+      ...current,
+      [courseSlug]: {
+        selected: false,
+        classMode: 'online',
+        batchId: '',
+        ...(current[courseSlug] || {}),
+        ...changes,
+      },
+    }))
+    setFeedback({ type: '', message: '' })
+  }
+
+  const handleGrantAccess = async () => {
+    const accessList = Object.entries(selectedCourses)
+      .filter(([, value]) => value.selected)
+      .map(([courseSlug, value]) => ({
+        courseSlug,
+        classMode: value.classMode || 'online',
+        batchId: value.batchId || '',
+      }))
+
+    if (!selectedUserId) {
+      setFeedback({ type: 'error', message: 'Please select a student' })
+      return
+    }
+
+    if (!accessList.length) {
+      setFeedback({ type: 'error', message: 'Please select at least one course' })
+      return
+    }
+
+    if (!accessReason.trim()) {
+      setFeedback({ type: 'error', message: 'Please enter why this access is being granted' })
+      return
+    }
+
+    setSaving(true)
+    setFeedback({ type: '', message: '' })
+    try {
+      const res = await api.post('/admin/grant-course-access', {
+        userId: selectedUserId,
+        accessType,
+        accessReason,
+        courses: accessList,
+      }, { withCredentials: true })
+      setFeedback({ type: 'success', message: res.data.message || 'Course access granted' })
+      setSelectedCourses({})
+      setAccessReason('')
+      fetchData()
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.response?.data?.message || 'Unable to grant course access' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) return <div className="admin-loading"><span className="spinner" /></div>
+
+  return (
+    <div className="admin-table-wrapper">
+      <div className="admin-table-header">
+        <div>
+          <h3>Manual Course Access</h3>
+          <p className="admin-helper-text">Give course access without payment. You can select multiple courses for one student.</p>
+        </div>
+        <button className="btn-admin" onClick={fetchData}>Refresh</button>
+      </div>
+
+      <div className="admin-access-panel">
+        <div className="admin-form-group">
+          <label>Student</label>
+          <select value={selectedUserId} onChange={(event) => { setSelectedUserId(event.target.value); setSelectedCourses({}); setFeedback({ type: '', message: '' }) }}>
+            <option value="">Select student</option>
+            {students.map((student) => (
+              <option key={student._id} value={student._id}>
+                {student.name} - {student.email} ({student.role})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {selectedStudent && (
+          <div className="admin-access-summary">
+            <div>
+              <strong>{selectedStudent.name}</strong>
+              <p className="admin-helper-text">{selectedStudent.email} - {selectedStudent.phone || 'No phone'}</p>
+            </div>
+            <span className="admin-badge admin-badge-active">{currentAccess.length} active courses</span>
+          </div>
+        )}
+
+        <div className="admin-access-audit-grid">
+          <div className="admin-form-group">
+            <label>Access Type</label>
+            <select value={accessType} onChange={(event) => { setAccessType(event.target.value); setFeedback({ type: '', message: '' }) }}>
+              <option value="manual">Manual Free Access</option>
+              <option value="scholarship">Scholarship</option>
+              <option value="free">Free / Trial Access</option>
+            </select>
+          </div>
+          <div className="admin-form-group">
+            <label>Reason *</label>
+            <input
+              value={accessReason}
+              onChange={(event) => { setAccessReason(event.target.value); setFeedback({ type: '', message: '' }) }}
+              placeholder="e.g. Demo student, scholarship approved, offline payment received"
+            />
+          </div>
+        </div>
+
+        <div className="admin-access-course-list">
+          {courses.map((course) => {
+            const selection = selectedCourses[course.slug] || { selected: false, classMode: 'online', batchId: '' }
+            const matchingBatches = batches.filter((batch) => batch.courseSlug === course.slug)
+            const hasAccess = currentAccessSlugs.has(course.slug)
+
+            return (
+              <div key={course._id} className={`admin-access-course ${selection.selected ? 'selected' : ''}`}>
+                <label className="admin-access-course-check">
+                  <input
+                    type="checkbox"
+                    checked={selection.selected}
+                    onChange={(event) => updateCourseSelection(course.slug, { selected: event.target.checked })}
+                  />
+                  <span>
+                    <strong>{course.title}</strong>
+                    <small>{course.slug}{hasAccess ? ' - already active' : ''}</small>
+                  </span>
+                </label>
+
+                <div className="admin-access-controls">
+                  <select
+                    value={selection.classMode}
+                    disabled={!selection.selected}
+                    onChange={(event) => updateCourseSelection(course.slug, { classMode: event.target.value })}
+                  >
+                    <option value="online">Online Classes</option>
+                    <option value="hybrid">Hybrid Classes</option>
+                    <option value="offline">Offline Classes</option>
+                  </select>
+                  <select
+                    value={selection.batchId}
+                    disabled={!selection.selected}
+                    onChange={(event) => updateCourseSelection(course.slug, { batchId: event.target.value })}
+                  >
+                    <option value="">No batch yet</option>
+                    {matchingBatches.map((batch) => (
+                      <option key={batch._id} value={batch._id}>{batch.title}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {feedback.type === 'error' && <p className="form-error">{feedback.message}</p>}
+        {feedback.type === 'success' && <p className="form-success">{feedback.message}</p>}
+
+        <div className="admin-access-actions">
+          <button className="btn-admin btn-admin-primary" onClick={handleGrantAccess} disabled={saving}>
+            <FiUserPlus size={14} />
+            {saving ? 'Granting...' : 'Grant Selected Access'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
