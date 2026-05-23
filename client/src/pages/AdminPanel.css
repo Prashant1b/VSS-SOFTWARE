@@ -459,6 +459,97 @@
   align-items: center;
 }
 
+.admin-access-panel {
+  padding: 20px;
+}
+
+.admin-access-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-light);
+}
+
+.admin-access-course-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-access-audit-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 16px;
+}
+
+.admin-access-course {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(320px, 0.9fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: white;
+}
+
+.admin-access-course.selected {
+  border-color: var(--primary-border);
+  box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.06);
+}
+
+.admin-access-course-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.admin-access-course-check input {
+  width: 16px;
+  height: 16px;
+  margin-top: 4px;
+  accent-color: var(--brand-navy);
+}
+
+.admin-access-course-check strong,
+.admin-access-course-check small {
+  display: block;
+}
+
+.admin-access-course-check small {
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.admin-access-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-access-controls select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.admin-access-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
 .admin-empty {
   text-align: center;
   padding: 48px 20px;
@@ -604,5 +695,31 @@
 
   .admin-student-row {
     flex-direction: column;
+  }
+
+  .admin-access-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-access-course {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-access-audit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-access-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-access-actions {
+    justify-content: stretch;
+  }
+
+  .admin-access-actions .btn-admin {
+    justify-content: center;
+    width: 100%;
   }
 }

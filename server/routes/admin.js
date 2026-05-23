@@ -35,6 +35,7 @@ import {
   getEnrollments,
   updateEnrollment,
   deleteEnrollment,
+  grantCourseAccess,
   getRecruitments,
   deleteRecruitment,
   getInternships,
@@ -99,6 +100,7 @@ router.get('/contacts', getContacts);
 router.delete('/contacts/:id', deleteContact);
 
 router.get('/enrollments', getEnrollments);
+router.post('/grant-course-access', grantCourseAccess);
 router.patch('/enrollments/:id', updateEnrollment);
 router.delete('/enrollments/:id', deleteEnrollment);
 
