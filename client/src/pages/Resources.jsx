@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FiBook, FiFileText, FiMic, FiTrendingUp, FiTarget, FiAward, FiDownload, FiExternalLink, FiMail, FiPhone } from 'react-icons/fi'
 import { FaWhatsapp } from 'react-icons/fa'
@@ -24,13 +24,33 @@ const categories = [
   { key: 'hiring', label: 'Hiring' },
 ]
 
+const uploadsBaseUrl = String(api.defaults.baseURL || '').replace(/\/$/, '')
+
+const getResourceIcon = (type = '') => {
+  const normalized = type.toLowerCase()
+  if (normalized.includes('book')) return <FiBook size={22} />
+  if (normalized.includes('webinar') || normalized.includes('workshop')) return <FiMic size={22} />
+  if (normalized.includes('case')) return <FiTrendingUp size={22} />
+  if (normalized.includes('report')) return <FiTarget size={22} />
+  if (normalized.includes('tip')) return <FiAward size={22} />
+  return <FiFileText size={22} />
+}
+
 export default function Resources() {
   const [activeCategory, setActiveCategory] = useState('all')
+  const [dynamicResources, setDynamicResources] = useState([])
   const [contactForm, setContactForm] = useState({ name: '', email: '', phone: '', subject: 'General Inquiry', message: '' })
   const [loading, setLoading] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
 
-  const filtered = activeCategory === 'all' ? resources : resources.filter(r => r.category === activeCategory)
+  useEffect(() => {
+    api.get('/public/resources')
+      .then((res) => setDynamicResources(res.data.data || []))
+      .catch(() => setDynamicResources([]))
+  }, [])
+
+  const resourceList = dynamicResources.length ? dynamicResources : resources
+  const filtered = activeCategory === 'all' ? resourceList : resourceList.filter(r => r.category === activeCategory)
 
   const handleContact = async (e) => {
     e.preventDefault()
@@ -47,7 +67,18 @@ export default function Resources() {
     }
   }
 
-  const handleResourceClick = (title) => {
+  const handleResourceClick = (resource) => {
+    if (resource.fileName) {
+      window.open(`${uploadsBaseUrl}/uploads/${encodeURIComponent(resource.fileName)}`, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    if (resource.externalUrl) {
+      window.open(resource.externalUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    const title = resource.title
     alert(`"${title}" will be available for download soon. Contact us at sales@vatedigi.com to request early access.`)
   }
 
@@ -84,12 +115,12 @@ export default function Resources() {
             {filtered.map((r, i) => (
               <div key={i} className="resource-detail-card card">
                 <div className="resource-detail-type">
-                  {r.icon}
+                  {r.icon || getResourceIcon(r.type)}
                   <span>{r.type}</span>
                 </div>
                 <h3>{r.title}</h3>
                 <p>{r.desc}</p>
-                <button className="resource-download-btn" onClick={() => handleResourceClick(r.title)}>
+                <button className="resource-download-btn" onClick={() => handleResourceClick(r)}>
                   {r.action.includes('Watch') || r.action.includes('Read') ? <FiExternalLink size={14} /> : <FiDownload size={14} />}
                   {r.action}
                 </button>

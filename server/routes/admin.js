@@ -1,6 +1,7 @@
 import express from 'express';
 import { protect } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/admin.js';
+import resourceUpload from '../middleware/resourceUpload.js';
 import {
   getDashboardStats,
   getUsers,
@@ -30,6 +31,10 @@ import {
   createPartner,
   updatePartner,
   deletePartner,
+  getResources,
+  createResource,
+  updateResource,
+  deleteResource,
   getContacts,
   deleteContact,
   getEnrollments,
@@ -90,6 +95,11 @@ router.get('/partners', getPartners);
 router.post('/partners', createPartner);
 router.put('/partners/:id', updatePartner);
 router.delete('/partners/:id', deletePartner);
+
+router.get('/resources', getResources);
+router.post('/resources', resourceUpload.single('file'), createResource);
+router.put('/resources/:id', resourceUpload.single('file'), updateResource);
+router.delete('/resources/:id', deleteResource);
 
 router.get('/batches', getBatches);
 router.post('/batches', createBatch);
