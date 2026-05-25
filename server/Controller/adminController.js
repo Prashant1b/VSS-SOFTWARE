@@ -12,6 +12,7 @@ import Batch from '../models/Batch.js';
 import ClassSession from '../models/ClassSession.js';
 import InternshipApplication from '../models/InternshipApplication.js';
 import InternshipDomain from '../models/InternshipDomain.js';
+import Resource from '../models/Resource.js';
 
 const normalizeListInput = (value) => {
   if (Array.isArray(value)) {
@@ -332,6 +333,56 @@ export const deletePartner = async (req, res) => {
   try {
     await Partner.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Partner deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const normalizeResourcePayload = (payload, file) => ({
+  type: String(payload.type || '').trim(),
+  title: String(payload.title || '').trim(),
+  desc: String(payload.desc || '').trim(),
+  category: String(payload.category || '').trim(),
+  action: String(payload.action || '').trim(),
+  externalUrl: String(payload.externalUrl || '').trim(),
+  order: Number(payload.order || 0),
+  isActive: payload.isActive === 'false' ? false : Boolean(payload.isActive ?? true),
+  ...(file ? { fileName: file.filename } : {}),
+});
+
+export const getResources = async (req, res) => {
+  try {
+    const data = await Resource.find().sort({ order: 1, createdAt: -1 });
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const createResource = async (req, res) => {
+  try {
+    const item = new Resource(normalizeResourcePayload(req.body, req.file));
+    await item.save();
+    res.status(201).json({ success: true, data: item });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const updateResource = async (req, res) => {
+  try {
+    const payload = normalizeResourcePayload(req.body, req.file);
+    const item = await Resource.findByIdAndUpdate(req.params.id, { $set: payload }, { returnDocument: 'after', runValidators: true });
+    res.json({ success: true, data: item });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteResource = async (req, res) => {
+  try {
+    await Resource.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Resource deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

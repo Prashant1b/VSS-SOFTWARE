@@ -4,6 +4,7 @@ import Testimonial from '../models/Testimonial.js';
 import HiringDrive from '../models/HiringDrive.js';
 import SiteStat from '../models/SiteStat.js';
 import Partner from '../models/Partner.js';
+import Resource from '../models/Resource.js';
 
 export const getPublicPlacements = async (req, res) => {
   try {
@@ -53,6 +54,15 @@ export const getPublicStats = async (req, res) => {
 export const getPublicPartners = async (req, res) => {
   try {
     const data = await Partner.find({ isActive: true }).sort({ order: 1 });
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getPublicResources = async (req, res) => {
+  try {
+    const data = await Resource.find({ isActive: true }).sort({ order: 1, createdAt: -1 });
     res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
