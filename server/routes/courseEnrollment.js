@@ -6,6 +6,7 @@ import {
   scheduleDemoSlot,
   createPaymentOrder,
   verifyCoursePayment,
+  downloadCourseReceipt,
 } from '../Controller/courseEnrollmentController.js';
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.get('/status/:courseSlug', getCourseEnrollmentStatus);
 router.post('/demo-slot', scheduleDemoSlot);
 router.post('/create-order', createPaymentOrder);
 router.post('/verify-payment', verifyCoursePayment);
+router.get('/receipt/:id', downloadCourseReceipt);
 
 export default router;

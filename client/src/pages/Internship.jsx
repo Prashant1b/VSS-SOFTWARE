@@ -6,6 +6,7 @@ import {
   FiCheck,
   FiClock,
   FiCode,
+  FiDownload,
   FiFileText,
   FiMail,
   FiTarget,
@@ -13,6 +14,7 @@ import {
   FiUser,
 } from 'react-icons/fi'
 import api from '../api'
+import { downloadApiFile } from '../utils/download'
 import './Internship.css'
 
 const fallbackTracks = [
@@ -76,6 +78,7 @@ export default function Internship() {
   const [form, setForm] = useState(createInitialForm())
   const [loading, setLoading] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
+  const [paidReceipt, setPaidReceipt] = useState(null)
 
   useEffect(() => {
     api.get('/internship/domains')
@@ -116,6 +119,7 @@ export default function Internship() {
     event.preventDefault()
     setLoading(true)
     setSubmitStatus(null)
+    setPaidReceipt(null)
 
     try {
       if (form.duration === '6-month' && !form.talentScholarship) {
@@ -140,6 +144,7 @@ export default function Internship() {
                 ...response,
               })
               setSubmitStatus('paid')
+              setPaidReceipt({ applicationId: application._id, email: form.email })
               setForm(createInitialForm(tracks[0]))
             } catch (err) {
               setSubmitStatus('payment-error')
@@ -165,6 +170,20 @@ export default function Internship() {
       if (!(form.duration === '6-month' && !form.talentScholarship)) {
         setLoading(false)
       }
+    }
+  }
+
+  const handleDownloadReceipt = async () => {
+    if (!paidReceipt?.applicationId || !paidReceipt?.email) return
+
+    try {
+      await downloadApiFile(
+        api,
+        `/internship/receipt/${paidReceipt.applicationId}?email=${encodeURIComponent(paidReceipt.email)}`,
+        `VSS-internship-receipt-${paidReceipt.applicationId}.pdf`
+      )
+    } catch (error) {
+      setSubmitStatus('payment-error')
     }
   }
 
@@ -363,7 +382,14 @@ export default function Internship() {
               </button>
               {submitStatus === 'success' && <p className="form-success">Application submitted! Our team will review it and contact you soon.</p>}
               {submitStatus === 'interview' && <p className="form-success">Application submitted! Free 6-month internship will be approved only after interview clearance.</p>}
-              {submitStatus === 'paid' && <p className="form-success">Payment successful! Your 6-month internship application is confirmed.</p>}
+              {submitStatus === 'paid' && (
+                <div>
+                  <p className="form-success">Payment successful! Your 6-month internship application is confirmed.</p>
+                  <button type="button" className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', marginTop: 10 }} onClick={handleDownloadReceipt}>
+                    <FiDownload size={15} /> Download Receipt
+                  </button>
+                </div>
+              )}
               {submitStatus === 'payment-error' && <p className="form-error">Payment captured, but verification failed. Please contact support with your payment ID.</p>}
               {submitStatus === 'error' && <p className="form-error">Something went wrong. Please try again or contact sales@vatedigi.com.</p>}
             </form>

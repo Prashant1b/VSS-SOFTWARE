@@ -7,6 +7,7 @@ import {
   FiBriefcase,
   FiCalendar,
   FiCheck,
+  FiDownload,
   FiEdit2,
   FiLogOut,
   FiMail,
@@ -18,6 +19,7 @@ import {
 } from 'react-icons/fi'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
+import { downloadApiFile } from '../utils/download'
 import './Dashboard.css'
 
 const studentQuickLinks = [
@@ -39,6 +41,7 @@ export default function Dashboard() {
   const [profileFeedback, setProfileFeedback] = useState({ type: '', message: '' })
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [passwordFeedback, setPasswordFeedback] = useState({ type: '', message: '' })
+  const [receiptFeedback, setReceiptFeedback] = useState({ type: '', message: '' })
   const [saving, setSaving] = useState(false)
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
@@ -212,6 +215,20 @@ export default function Dashboard() {
     }
   }
 
+  const handleDownloadCourseReceipt = async (enrollment) => {
+    setReceiptFeedback({ type: '', message: '' })
+    try {
+      await downloadApiFile(
+        api,
+        `/course-enrollment/receipt/${enrollment._id}`,
+        `VSS-course-receipt-${enrollment._id}.pdf`,
+        { withCredentials: true }
+      )
+    } catch (error) {
+      setReceiptFeedback({ type: 'error', message: error.message || 'Unable to download receipt right now.' })
+    }
+  }
+
   if (!user) return null
   if (user.role === 'teacher') return <Navigate to="/teacher" replace />
 
@@ -274,6 +291,7 @@ export default function Dashboard() {
 
             {!isEmployer && (
               <>
+                {receiptFeedback.type === 'error' && <p className="form-error">{receiptFeedback.message}</p>}
                 <h2 className="dash-section-title">My Learning Access</h2>
                 {loadingEnrollments ? (
                   <div className="dash-placeholder-card">Loading your course access...</div>
@@ -298,6 +316,9 @@ export default function Dashboard() {
                               <FiPlayCircle size={15} /> Demo Video
                             </a>
                           )}
+                          <button type="button" className="btn btn-outline btn-sm" onClick={() => handleDownloadCourseReceipt(item)}>
+                            <FiDownload size={15} /> Receipt
+                          </button>
                           <span className="dash-meta-text">Paid on {new Date(item.paidAt || item.createdAt).toLocaleDateString('en-IN')}</span>
                         </div>
                       </div>
@@ -352,6 +373,7 @@ export default function Dashboard() {
 
         {!isEmployer && activeTab === 'courses' && (
           <div className="dash-content">
+            {receiptFeedback.type === 'error' && <p className="form-error">{receiptFeedback.message}</p>}
             <h2 className="dash-section-title">Courses and Enrollment Status</h2>
             {loadingEnrollments ? (
               <div className="dash-placeholder-card">Loading your courses...</div>
@@ -382,6 +404,9 @@ export default function Dashboard() {
                                 <FiPlayCircle size={14} /> Watch Video
                               </a>
                             ) : null}
+                            <button type="button" className="btn btn-outline btn-sm" onClick={() => handleDownloadCourseReceipt(item)}>
+                              <FiDownload size={14} /> Receipt
+                            </button>
                           </div>
                         ) : (
                           <Link to="/edtech#enroll" className="btn btn-primary btn-sm">

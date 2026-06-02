@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import axios from 'axios';
 import InternshipApplication from '../models/InternshipApplication.js';
 import InternshipDomain from '../models/InternshipDomain.js';
+import { buildReceiptPdf, sendReceiptDownload, sendReceiptEmail } from '../utils/receipt.js';
 
 const INTERNSHIP_AMOUNT = 699;
 const cleanEnv = (value) => String(value || '').trim().replace(/^"|"$/g, '');
@@ -106,6 +107,38 @@ function formatInternshipDuration(duration) {
   if (duration === '3-month') return '3 Months';
   if (duration === '6-month') return '6 Months';
   return duration;
+}
+
+async function buildInternshipReceipt(application) {
+  const receiptNo = `VSS-INTERN-${String(application._id).slice(-8).toUpperCase()}`;
+  const pdf = await buildReceiptPdf({
+    receiptNo,
+    title: 'Internship Payment Receipt',
+    payer: {
+      name: application.name,
+      email: application.email,
+      phone: application.phone,
+    },
+    itemName: `${formatInternshipDuration(application.duration)} Internship`,
+    itemDescription: application.track,
+    amount: application.amount,
+    currency: application.currency || 'INR',
+    paymentId: application.paymentId,
+    orderId: application.paymentOrderId,
+    paidAt: application.paidAt || application.createdAt,
+    metadata: [
+      { label: 'Track', value: application.track },
+      { label: 'Duration', value: formatInternshipDuration(application.duration) },
+      { label: 'College', value: application.college },
+      { label: 'Status', value: application.status },
+    ],
+  });
+
+  return {
+    receiptNo,
+    fileName: `${receiptNo}.pdf`,
+    pdf,
+  };
 }
 
 async function sendApplicationReceivedEmail(application) {
@@ -292,11 +325,48 @@ export const verifyInternshipPayment = async (req, res) => {
 
     await sendPaymentConfirmationEmail(application);
 
+    const receipt = await buildInternshipReceipt(application);
+    sendReceiptEmail({
+      to: application.email,
+      name: application.name,
+      subject: `VSS Internship Payment Receipt - ${receipt.receiptNo}`,
+      receiptNo: receipt.receiptNo,
+      attachmentContent: receipt.pdf,
+      fileName: receipt.fileName,
+    }).catch((error) => {
+      console.error('Internship receipt email error:', error.response?.data || error.message);
+    });
+
     res.json({
       success: true,
       message: 'Payment successful. Internship application is confirmed.',
       data: application,
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const downloadInternshipReceipt = async (req, res) => {
+  try {
+    const email = String(req.query.email || '').trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required to download this receipt' });
+    }
+
+    const application = await InternshipApplication.findOne({
+      _id: req.params.id,
+      email,
+      planType: 'paid',
+      status: 'paid',
+    }).lean();
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Paid internship receipt not found' });
+    }
+
+    const receipt = await buildInternshipReceipt(application);
+    sendReceiptDownload(res, receipt.fileName, receipt.pdf);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
