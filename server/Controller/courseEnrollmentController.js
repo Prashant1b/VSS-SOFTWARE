@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import axios from 'axios';
 import Enrollment from '../models/Enrollment.js';
 import Course from '../models/Course.js';
+import { buildReceiptPdf, sendReceiptDownload, sendReceiptEmail } from '../utils/receipt.js';
 
 const cleanEnv = (value) => String(value || '').trim().replace(/^"|"$/g, '');
 
@@ -54,6 +55,38 @@ function getClassOption(course, classMode) {
   }
 
   return { label: option.label, amount };
+}
+
+async function buildCourseReceipt(enrollment) {
+  const receiptNo = `VSS-COURSE-${String(enrollment._id).slice(-8).toUpperCase()}`;
+  const pdf = await buildReceiptPdf({
+    receiptNo,
+    title: 'Course Payment Receipt',
+    payer: {
+      name: enrollment.name,
+      email: enrollment.email,
+      phone: enrollment.phone,
+    },
+    itemName: enrollment.course,
+    itemDescription: enrollment.classModeLabel || 'Course enrollment',
+    amount: enrollment.amount,
+    currency: enrollment.currency || 'INR',
+    paymentId: enrollment.paymentId,
+    orderId: enrollment.paymentOrderId,
+    paidAt: enrollment.paidAt || enrollment.createdAt,
+    metadata: [
+      { label: 'Course Slug', value: enrollment.courseSlug },
+      { label: 'Class Mode', value: enrollment.classModeLabel || enrollment.classMode },
+      { label: 'Batch', value: enrollment.batchName || 'Not assigned yet' },
+      { label: 'Access Type', value: enrollment.accessType || 'paid' },
+    ],
+  });
+
+  return {
+    receiptNo,
+    fileName: `${receiptNo}.pdf`,
+    pdf,
+  };
 }
 
 export const getMyCourseEnrollments = async (req, res) => {
@@ -308,11 +341,43 @@ export const verifyCoursePayment = async (req, res) => {
       },
     });
 
+    const receipt = await buildCourseReceipt(enrollment);
+    sendReceiptEmail({
+      to: enrollment.email,
+      name: enrollment.name,
+      subject: `VSS Course Payment Receipt - ${receipt.receiptNo}`,
+      receiptNo: receipt.receiptNo,
+      attachmentContent: receipt.pdf,
+      fileName: receipt.fileName,
+    }).catch((error) => {
+      console.error('Course receipt email error:', error.response?.data || error.message);
+    });
+
     res.json({
       success: true,
       message: 'Payment verified and enrollment completed',
       data: enrollment,
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const downloadCourseReceipt = async (req, res) => {
+  try {
+    const enrollment = await Enrollment.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+      source: 'dashboard_enrollment',
+      status: 'paid',
+    }).lean();
+
+    if (!enrollment) {
+      return res.status(404).json({ success: false, message: 'Paid enrollment receipt not found' });
+    }
+
+    const receipt = await buildCourseReceipt(enrollment);
+    sendReceiptDownload(res, receipt.fileName, receipt.pdf);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

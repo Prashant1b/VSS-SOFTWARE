@@ -9,6 +9,7 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiClock,
+  FiDownload,
   FiPlayCircle,
   FiUsers,
   FiGlobe,
@@ -16,6 +17,7 @@ import {
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
 import { courseVisuals, demoTimeSlots } from '../data/coursePresentation'
+import { downloadApiFile } from '../utils/download'
 import './CourseDetails.css'
 
 function formatCurrency(amount, fallback) {
@@ -226,6 +228,23 @@ export default function CourseDetail() {
       setFeedback({ type: 'error', message: err.response?.data?.message || 'Unable to book demo right now.' })
     } finally {
       setActionLoading('')
+    }
+  }
+
+  const handleDownloadReceipt = async () => {
+    const enrollmentId = courseState.enrollment?._id
+    if (!enrollmentId) return
+
+    try {
+      await downloadApiFile(
+        api,
+        `/course-enrollment/receipt/${enrollmentId}`,
+        `VSS-course-receipt-${enrollmentId}.pdf`,
+        { withCredentials: true }
+      )
+    } catch (error) {
+      const message = error.message || 'Unable to download receipt right now. Please refresh and try again.'
+      setFeedback({ type: 'error', message })
     }
   }
 
@@ -468,6 +487,9 @@ export default function CourseDetail() {
                   <Link to="/dashboard" className="cd-btn cd-btn--outline">
                     View Dashboard
                   </Link>
+                  <button type="button" className="cd-btn cd-btn--outline" onClick={handleDownloadReceipt}>
+                    <FiDownload size={16} /> Download Receipt
+                  </button>
                 </div>
               ) : (
                 <>
