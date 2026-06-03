@@ -285,6 +285,12 @@ export default function AdminPanel() {
         <div className="admin-topbar">
           <h1>{SECTIONS.find((section) => section.key === activeSection)?.label}</h1>
           <div className="admin-topbar-actions">
+            <Link to="/teacher" className="btn-admin btn-admin-sm">
+              Teacher Panel
+            </Link>
+            <Link to="/dashboard" className="btn-admin btn-admin-sm">
+              Dashboard
+            </Link>
             <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{user?.name}</span>
             <button className="btn-admin btn-admin-danger btn-admin-sm" onClick={logout}>
               <FiLogOut size={14} /> Logout
