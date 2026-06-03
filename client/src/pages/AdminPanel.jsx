@@ -126,13 +126,27 @@ const contactColumns = [
   { key: 'createdAt', label: 'Date', render: (value) => new Date(value).toLocaleDateString() },
 ]
 
+const getReceiptNo = (prefix, item) => item?._id ? `VSS-${prefix}-${String(item._id).slice(-8).toUpperCase()}` : '-'
+const shortTxnId = (value) => {
+  const text = String(value || '')
+  if (!text) return '-'
+  return text.length > 18 ? `${text.slice(0, 10)}...${text.slice(-6)}` : text
+}
+const renderTxnValue = (value) => value ? <span title={value}>{shortTxnId(value)}</span> : '-'
+const renderPaidDate = (value) => value ? new Date(value).toLocaleString('en-IN') : '-'
+
 const enrollmentColumns = [
   { key: 'name', label: 'Name' },
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
   { key: 'course', label: 'Course' },
+  { key: '_id', label: 'Receipt No', render: (_value, item) => getReceiptNo('COURSE', item) },
   { key: 'classModeLabel', label: 'Class Mode', render: (value) => value || '-' },
   { key: 'amount', label: 'Amount', render: (value) => value ? `Rs ${value}` : '-' },
+  { key: 'paymentOrderId', label: 'Order ID', render: renderTxnValue },
+  { key: 'paymentId', label: 'Payment ID', render: renderTxnValue },
+  { key: 'paymentSignature', label: 'Signature', render: renderTxnValue },
+  { key: 'paidAt', label: 'Paid At', render: renderPaidDate },
   {
     key: 'accessType',
     label: 'Access',
@@ -167,6 +181,7 @@ const internshipColumns = [
   { key: 'college', label: 'College' },
   { key: 'track', label: 'Track' },
   { key: 'duration', label: 'Duration' },
+  { key: '_id', label: 'Receipt No', render: (_value, item) => getReceiptNo('INTERN', item) },
   {
     key: 'planType',
     label: 'Plan',
@@ -185,6 +200,10 @@ const internshipColumns = [
     label: 'Amount',
     render: (value, item) => item.planType === 'paid' ? `Rs ${value || 699}` : 'Free',
   },
+  { key: 'paymentOrderId', label: 'Order ID', render: renderTxnValue },
+  { key: 'paymentId', label: 'Payment ID', render: renderTxnValue },
+  { key: 'paymentSignature', label: 'Signature', render: renderTxnValue },
+  { key: 'paidAt', label: 'Paid At', render: renderPaidDate },
   {
     key: 'interviewStatus',
     label: 'Interview',
@@ -1769,7 +1788,7 @@ function EnrollmentSection() {
                   <tr key={item._id}>
                     {enrollmentColumns.map((column) => (
                       <td key={column.key} data-label={column.label}>
-                        {column.render ? column.render(item[column.key]) : (item[column.key] ?? '-')}
+                        {column.render ? column.render(item[column.key], item) : (item[column.key] ?? '-')}
                       </td>
                     ))}
                     <td data-label="Actions">
