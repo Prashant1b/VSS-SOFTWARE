@@ -26,6 +26,16 @@ const categories = [
 
 const uploadsBaseUrl = String(api.defaults.baseURL || '').replace(/\/$/, '')
 
+const getResourceFileUrl = (resource) => {
+  if (resource?._id && (resource.fileStoragePath || resource.fileName)) {
+    return `${uploadsBaseUrl}/public/resources/${resource._id}/file`
+  }
+  if (resource?.fileName) {
+    return `${uploadsBaseUrl}/uploads/${encodeURIComponent(resource.fileName)}`
+  }
+  return ''
+}
+
 const getResourceIcon = (type = '') => {
   const normalized = type.toLowerCase()
   if (normalized.includes('book')) return <FiBook size={22} />
@@ -68,8 +78,9 @@ export default function Resources() {
   }
 
   const handleResourceClick = (resource) => {
-    if (resource.fileName) {
-      window.open(`${uploadsBaseUrl}/uploads/${encodeURIComponent(resource.fileName)}`, '_blank', 'noopener,noreferrer')
+    const fileUrl = getResourceFileUrl(resource)
+    if (fileUrl) {
+      window.open(fileUrl, '_blank', 'noopener,noreferrer')
       return
     }
 

@@ -31,6 +31,13 @@ const normalizeListInput = (value) => {
   return [];
 };
 
+const toSafePublicId = (value) => String(value || '')
+  .trim()
+  .toLowerCase()
+  .replace(/\.[^.]+$/, '')
+  .replace(/[^a-z0-9-_]+/g, '-')
+  .replace(/^-+|-+$/g, '') || 'resource-file';
+
 const normalizeCoursePayload = (payload) => ({
   ...payload,
   classLocation: String(payload.classLocation || payload.location || '').trim(),
@@ -62,6 +69,53 @@ function getSupabaseStorageConfig() {
     url: url.replace(/\/$/, ''),
     serviceRoleKey,
     bucket,
+  };
+}
+
+function getSupabaseResourceStorageConfig() {
+  const url = cleanEnv(process.env.SUPABASE_URL);
+  const serviceRoleKey = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const bucket = cleanEnv(process.env.SUPABASE_RESOURCE_BUCKET) || 'resource-files';
+
+  if (!url || !serviceRoleKey) {
+    throw new Error('Supabase Storage is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to server environment.');
+  }
+
+  return {
+    url: url.replace(/\/$/, ''),
+    serviceRoleKey,
+    bucket,
+  };
+}
+
+async function uploadResourceFile(file) {
+  if (!file) return {};
+
+  const { url, serviceRoleKey, bucket } = getSupabaseResourceStorageConfig();
+  const ext = path.extname(file.originalname).toLowerCase();
+  const fileName = `${toSafePublicId(file.originalname)}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+  const storagePath = `resources/${new Date().getFullYear()}/${fileName}`;
+
+  await axios.post(
+    `${url}/storage/v1/object/${bucket}/${storagePath}`,
+    file.buffer,
+    {
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        'Content-Type': file.mimetype || 'application/octet-stream',
+        'x-upsert': 'false',
+      },
+      maxBodyLength: Infinity,
+    }
+  );
+
+  return {
+    fileName,
+    fileUrl: '',
+    fileOriginalName: file.originalname,
+    fileStorageProvider: 'supabase',
+    fileStoragePath: storagePath,
   };
 }
 
@@ -357,7 +411,7 @@ export const deletePartner = async (req, res) => {
   }
 };
 
-const normalizeResourcePayload = (payload, file) => ({
+const normalizeResourcePayload = (payload) => ({
   type: String(payload.type || '').trim(),
   title: String(payload.title || '').trim(),
   desc: String(payload.desc || '').trim(),
@@ -366,7 +420,6 @@ const normalizeResourcePayload = (payload, file) => ({
   externalUrl: String(payload.externalUrl || '').trim(),
   order: Number(payload.order || 0),
   isActive: payload.isActive === 'false' ? false : Boolean(payload.isActive ?? true),
-  ...(file ? { fileName: file.filename } : {}),
 });
 
 export const getResources = async (req, res) => {
@@ -380,7 +433,11 @@ export const getResources = async (req, res) => {
 
 export const createResource = async (req, res) => {
   try {
-    const item = new Resource(normalizeResourcePayload(req.body, req.file));
+    const uploadedFile = await uploadResourceFile(req.file);
+    const item = new Resource({
+      ...normalizeResourcePayload(req.body),
+      ...uploadedFile,
+    });
     await item.save();
     res.status(201).json({ success: true, data: item });
   } catch (error) {
@@ -390,7 +447,11 @@ export const createResource = async (req, res) => {
 
 export const updateResource = async (req, res) => {
   try {
-    const payload = normalizeResourcePayload(req.body, req.file);
+    const uploadedFile = await uploadResourceFile(req.file);
+    const payload = {
+      ...normalizeResourcePayload(req.body),
+      ...uploadedFile,
+    };
     const item = await Resource.findByIdAndUpdate(req.params.id, { $set: payload }, { returnDocument: 'after', runValidators: true });
     res.json({ success: true, data: item });
   } catch (error) {

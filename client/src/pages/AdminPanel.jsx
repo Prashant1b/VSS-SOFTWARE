@@ -219,6 +219,12 @@ const getRecruitmentFileUrl = (item) => {
   return ''
 }
 
+const getResourceFileUrl = (item) => {
+  if (item?._id && (item.fileStoragePath || item.fileName)) return `${uploadsBaseUrl}/public/resources/${item._id}/file`
+  if (item?.fileName) return `${uploadsBaseUrl}/uploads/${encodeURIComponent(item.fileName)}`
+  return ''
+}
+
 const recruitmentColumns = [
   { key: 'companyName', label: 'Company' },
   { key: 'role', label: 'Role' },
@@ -881,7 +887,7 @@ function ResourceSection() {
                   <td data-label="Type">{item.type}</td>
                   <td data-label="Category">{item.category}</td>
                   <td data-label="File/Link">
-                    {item.fileName ? <a href={`${uploadsBaseUrl}/uploads/${encodeURIComponent(item.fileName)}`} target="_blank" rel="noreferrer">View File</a> : item.externalUrl ? <a href={item.externalUrl} target="_blank" rel="noreferrer">Open Link</a> : '-'}
+                    {getResourceFileUrl(item) ? <a href={getResourceFileUrl(item)} target="_blank" rel="noreferrer">View File</a> : item.externalUrl ? <a href={item.externalUrl} target="_blank" rel="noreferrer">Open Link</a> : '-'}
                   </td>
                   <td data-label="Status">
                     <span className={`admin-badge ${item.isActive ? 'admin-badge-active' : 'admin-badge-inactive'}`}>
