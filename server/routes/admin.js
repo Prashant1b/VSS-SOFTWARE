@@ -42,6 +42,7 @@ import {
   deleteEnrollment,
   grantCourseAccess,
   getRecruitments,
+  viewRecruitmentFile,
   deleteRecruitment,
   getInternships,
   updateInternship,
@@ -115,6 +116,7 @@ router.patch('/enrollments/:id', updateEnrollment);
 router.delete('/enrollments/:id', deleteEnrollment);
 
 router.get('/recruitments', getRecruitments);
+router.get('/recruitments/:id/file', viewRecruitmentFile);
 router.delete('/recruitments/:id', deleteRecruitment);
 
 router.get('/internships', getInternships);

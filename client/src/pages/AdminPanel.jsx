@@ -213,6 +213,11 @@ const internshipColumns = [
 ]
 
 const uploadsBaseUrl = String(api.defaults.baseURL || '').replace(/\/$/, '')
+const getRecruitmentFileUrl = (item) => {
+  if (item?._id) return `${uploadsBaseUrl}/admin/recruitments/${item._id}/file`
+  if (item?.jdFile) return `${uploadsBaseUrl}/uploads/${encodeURIComponent(item.jdFile)}`
+  return ''
+}
 
 const recruitmentColumns = [
   { key: 'companyName', label: 'Company' },
@@ -224,11 +229,14 @@ const recruitmentColumns = [
   {
     key: 'jdFile',
     label: 'Resume/JD',
-    render: (value) => value ? (
-      <a href={`${uploadsBaseUrl}/uploads/${encodeURIComponent(value)}`} target="_blank" rel="noreferrer">
-        View File
-      </a>
-    ) : '-',
+    render: (_value, item) => {
+      const fileUrl = getRecruitmentFileUrl(item)
+      return fileUrl ? (
+        <a href={fileUrl} target="_blank" rel="noreferrer">
+          View File
+        </a>
+      ) : '-'
+    },
   },
   { key: 'createdAt', label: 'Date', render: (value) => new Date(value).toLocaleDateString() },
 ]

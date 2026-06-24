@@ -1,4 +1,6 @@
 import Placement from '../models/Placement.js';
+import axios from 'axios';
+import path from 'path';
 import Course from '../models/Course.js';
 import Testimonial from '../models/Testimonial.js';
 import HiringDrive from '../models/HiringDrive.js';
@@ -45,6 +47,23 @@ const enrollmentClassModes = {
 };
 
 const validClassModes = Object.keys(enrollmentClassModes);
+const cleanEnv = (value) => String(value || '').trim().replace(/^"|"$/g, '');
+
+function getSupabaseStorageConfig() {
+  const url = cleanEnv(process.env.SUPABASE_URL);
+  const serviceRoleKey = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const bucket = cleanEnv(process.env.SUPABASE_RECRUITMENT_BUCKET) || 'recruitment-files';
+
+  if (!url || !serviceRoleKey) {
+    throw new Error('Supabase Storage is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to server environment.');
+  }
+
+  return {
+    url: url.replace(/\/$/, ''),
+    serviceRoleKey,
+    bucket,
+  };
+}
 
 export const getDashboardStats = async (req, res) => {
   try {
@@ -698,6 +717,66 @@ export const getRecruitments = async (req, res) => {
     res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const viewRecruitmentFile = async (req, res) => {
+  try {
+    const item = await Recruitment.findById(req.params.id).lean();
+    if (!item) {
+      return res.status(404).json({ success: false, message: 'Recruitment record not found' });
+    }
+
+    if (item.jdFileStorageProvider === 'supabase' && item.jdFileStoragePath) {
+      const { url, serviceRoleKey, bucket } = getSupabaseStorageConfig();
+      const fileResponse = await axios.get(
+        `${url}/storage/v1/object/${bucket}/${item.jdFileStoragePath}`,
+        {
+          responseType: 'stream',
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+          },
+        }
+      );
+
+      const originalName = item.jdFileOriginalName || item.jdFile || path.basename(item.jdFileStoragePath) || 'recruitment-file';
+      const ext = path.extname(originalName).toLowerCase();
+      const contentType = fileResponse.headers['content-type']
+        || (ext === '.pdf' ? 'application/pdf' : 'application/octet-stream');
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `inline; filename="${originalName.replace(/"/g, '')}"`);
+      res.setHeader('Cache-Control', 'private, max-age=300');
+      return fileResponse.data.pipe(res);
+    }
+
+    if (!item.jdFileUrl) {
+      if (item.jdFile) {
+        return res.redirect(`/api/uploads/${encodeURIComponent(item.jdFile)}`);
+      }
+      return res.status(404).json({ success: false, message: 'No file uploaded for this recruitment' });
+    }
+
+    const fileResponse = await axios.get(item.jdFileUrl, {
+      responseType: 'stream',
+      maxRedirects: 5,
+    });
+
+    const originalName = item.jdFileOriginalName || item.jdFile || path.basename(new URL(item.jdFileUrl).pathname) || 'recruitment-file';
+    const ext = path.extname(originalName).toLowerCase();
+    const contentType = fileResponse.headers['content-type']
+      || (ext === '.pdf' ? 'application/pdf' : 'application/octet-stream');
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${originalName.replace(/"/g, '')}"`);
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    fileResponse.data.pipe(res);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.response?.data?.message || error.message || 'Unable to load recruitment file',
+    });
   }
 };
 

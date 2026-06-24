@@ -39,8 +39,16 @@ export default function Staffing() {
   const [loading, setLoading] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
 
+  const handlePhoneChange = (e) => {
+    setForm({ ...form, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!/^\d{10}$/.test(form.phone)) {
+      setSubmitStatus('phone-error')
+      return
+    }
     setLoading(true)
     setSubmitStatus(null)
     try {
@@ -194,8 +202,16 @@ export default function Staffing() {
                   <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
                 </div>
                 <div className="form-group">
-                  <label>Phone</label>
-                  <input type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                  <label>Phone *</label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={handlePhoneChange}
+                    required
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    inputMode="numeric"
+                  />
                 </div>
               </div>
               <div className="form-group">
@@ -213,6 +229,7 @@ export default function Staffing() {
               </button>
               {submitStatus === 'success' && <p className="form-success">Requirement submitted! Our team will reach out within 48 hours.</p>}
               {submitStatus === 'error' && <p className="form-error">Something went wrong. Please try again or email us at sales@vatedigi.com.</p>}
+              {submitStatus === 'phone-error' && <p className="form-error">Mobile number must be exactly 10 digits.</p>}
             </form>
           </div>
         </div>

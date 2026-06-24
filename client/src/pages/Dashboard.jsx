@@ -154,6 +154,10 @@ export default function Dashboard() {
 
   const handleJobSubmit = async (event) => {
     event.preventDefault()
+    if (!/^\d{10}$/.test(jobForm.phone)) {
+      setJobFeedback({ type: 'error', message: 'Mobile number must be exactly 10 digits.' })
+      return
+    }
     setPostingJob(true)
     setJobFeedback({ type: '', message: '' })
 
@@ -213,6 +217,11 @@ export default function Dashboard() {
     } finally {
       setPasswordSaving(false)
     }
+  }
+
+  const handleJobPhoneChange = (event) => {
+    setJobForm({ ...jobForm, phone: event.target.value.replace(/\D/g, '').slice(0, 10) })
+    setJobFeedback({ type: '', message: '' })
   }
 
   const handleDownloadCourseReceipt = async (enrollment) => {
@@ -459,7 +468,15 @@ export default function Dashboard() {
                     </div>
                     <div className="form-group">
                       <label>Phone</label>
-                      <input type="tel" value={jobForm.phone} onChange={(event) => setJobForm({ ...jobForm, phone: event.target.value })} />
+                      <input
+                        type="tel"
+                        value={jobForm.phone}
+                        onChange={handleJobPhoneChange}
+                        required
+                        maxLength={10}
+                        pattern="[0-9]{10}"
+                        inputMode="numeric"
+                      />
                     </div>
                   </div>
                   <div className="form-group">

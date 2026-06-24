@@ -8,11 +8,12 @@ import {
 import recruitmentUpload from '../middleware/recruitmentUpload.js';
 import { protect } from '../middleware/auth.js';
 import { requireEmployer } from '../middleware/employer.js';
+import { requireAdmin } from '../middleware/admin.js';
 
 const router = express.Router();
 
 router.post('/', recruitmentUpload.single('jdFile'), createRecruitment);
-router.get('/', listRecruitments);
+router.get('/', protect, requireAdmin, listRecruitments);
 router.post('/employer', protect, requireEmployer, recruitmentUpload.single('jdFile'), createEmployerRecruitment);
 router.get('/my', protect, requireEmployer, listEmployerRecruitments);
 
