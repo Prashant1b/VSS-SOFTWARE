@@ -32,7 +32,6 @@ This project helped me gain hands-on experience in building real-world full-stac
 - ⚛️ React.js (Vite)
 - 🛣️ React Router DOM
 - 🎨 Tailwind CSS
-- 🎬 Framer Motion
 - 🎥 LiveKit Client SDK
 - 🔗 Axios
 
@@ -47,9 +46,8 @@ This project helped me gain hands-on experience in building real-world full-stac
 - 💳 Razorpay
 - ☁️ Cloudinary
 - 🗂️ Supabase Storage
-- 📧 Brevo API / Nodemailer
+- 📧 Brevo API 
 - 📄 PDFKit
-- 📤 Multer
 - 🎥 LiveKit Server SDK
 
 ---
